@@ -1,0 +1,32 @@
+# Source files
+src/
+tests/
+
+# Config files
+.eslintrc.cjs
+.prettierrc.json
+.prettierignore
+tsconfig.json
+tsconfig.build.json
+tsup.config.ts
+vitest.config.ts
+
+# CI/CD
+.github/
+
+# Documentation (keep README.md and LICENSE)
+CONTRIBUTING.md
+CLAUDE.md
+ROADMAP.md
+
+# Development files
+*.log
+.DS_Store
+.env
+.env.local
+coverage/
+node_modules/
+
+# Build artifacts
+*.tsbuildinfo
+.tmp/

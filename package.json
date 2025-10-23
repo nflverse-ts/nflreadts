@@ -1,0 +1,82 @@
+{
+  "name": "nflreadts",
+  "version": "0.0.1",
+  "description": "TypeScript port of nflreadpy/nflreadr for accessing NFL data from the nflverse ecosystem",
+  "keywords": [
+    "nfl",
+    "nflverse",
+    "nflreadr",
+    "nflreadpy",
+    "football",
+    "sports",
+    "data",
+    "statistics",
+    "typescript"
+  ],
+  "homepage": "https://github.com/nflverse-ts/nflreadts#readme",
+  "bugs": {
+    "url": "https://github.com/nflverse-ts/nflreadts/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nflverse-ts/nflreadts.git"
+  },
+  "license": "MIT",
+  "author": "Riel St. Amand <riel.stamand@gmail.com>",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "clean": "rimraf dist coverage",
+    "dev": "tsup --watch",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "lint": "eslint src tests --ext .ts",
+    "lint:fix": "eslint src tests --ext .ts --fix",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "typecheck": "tsc --noEmit",
+    "validate": "npm run typecheck && npm run lint && npm run format:check && npm run test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vitest/coverage-v8": "^1.5.0",
+    "@vitest/ui": "^1.5.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
+  },
+  "dependencies": {
+    "papaparse": "^5.4.1"
+  },
+  "packageManager": "npm@10.5.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

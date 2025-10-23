@@ -2,6 +2,9 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![CI](https://github.com/YOUR_USERNAME/nflreadts/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/nflreadts/actions)
+[![codecov](https://codecov.io/gh/YOUR_USERNAME/nflreadts/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/nflreadts)
+[![npm version](https://img.shields.io/npm/v/nflreadts.svg)](https://www.npmjs.com/package/nflreadts)
 
 The TypeScript port of the [nflreadpy](https://github.com/nflverse/nflreadpy)/[nflreadr](https://github.com/nflverse/nflreadr) packages from the [nflverse](https://github.com/nflverse) team.
 
@@ -9,9 +12,16 @@ The TypeScript port of the [nflreadpy](https://github.com/nflverse/nflreadpy)/[n
 
 nflreadts brings the power of nflverse data tools to the TypeScript/JavaScript ecosystem, enabling developers to easily access and work with NFL data in Node.js and browser environments.
 
-## Status
+## ⚠️ Status: Alpha / Work in Progress
 
-This project is currently in early development. Stay tuned for updates!
+**This package is currently in active development and not yet ready for production use.**
+
+- Version 0.x.x indicates pre-release status
+- APIs may change without notice
+- Features are being implemented incrementally (see [ROADMAP](docs/ROADMAP.md))
+- Early adopters and contributors are welcome!
+
+Current Phase: **Phase 1 - Configuration and Setup**
 
 ## Features (Planned)
 
@@ -24,7 +34,7 @@ This project is currently in early development. Stay tuned for updates!
 
 ## Installation
 
-*Coming soon*
+> **Note:** Package is available on npm but in alpha stage
 
 ```bash
 npm install nflreadts
@@ -32,7 +42,7 @@ npm install nflreadts
 
 ## Usage
 
-*Documentation will be available once the initial release is ready*
+> **Note:** Documentation will be available once the initial release is ready
 
 ## Related Projects
 

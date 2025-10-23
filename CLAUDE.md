@@ -122,6 +122,7 @@ nflreadts is the TypeScript port of nflreadpy/nflreadr from the nflverse team. T
    - Add documentation
    - Review for performance optimization opportunities
    - Verify API consistency with nflverse packages
+   - Update ROADMAP.md
 
 ## Common Patterns
 
@@ -135,7 +136,7 @@ async function fetchData<T>(url: string): Promise<T> {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    return await response.json() as T;
+    return (await response.json()) as T;
   } catch (error) {
     throw new Error(`Failed to fetch data: ${error}`);
   }
@@ -149,7 +150,7 @@ async function fetchData<T>(url: string): Promise<T> {
 const config = {
   apiVersion: 'v1',
   timeout: 5000,
-  retries: 3
+  retries: 3,
 } as const satisfies Record<string, string | number>;
 ```
 

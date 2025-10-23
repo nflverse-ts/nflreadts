@@ -1,6 +1,6 @@
 {
   "name": "nflreadts",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "TypeScript port of nflreadpy/nflreadr for accessing NFL data from the nflverse ecosystem",
   "keywords": [
     "nfl",

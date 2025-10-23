@@ -17,6 +17,7 @@ export default defineConfig({
         '**/*.config.ts',
         '**/*.config.js',
         '**/*.config.cjs',
+        '.eslintrc.cjs',
       ],
       thresholds: {
         lines: 80,

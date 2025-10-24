@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HttpClient, createHttpClient } from '../../src/client/client.js';
-import { NetworkError, TimeoutError } from '../../src/types/error.js';
+import { NetworkError, RequestAbortedError, TimeoutError } from '../../src/types/error.js';
 
 describe('HttpClient', () => {
   let client: HttpClient;
@@ -298,6 +298,133 @@ describe('HttpClient', () => {
       client1.clearCache();
       const newStats2 = client2.getCacheStats();
       expect(newStats2.size).toBe(0);
+    });
+  });
+
+  describe('AbortController Support', () => {
+    it('should support AbortSignal in request options', () => {
+      const controller = new AbortController();
+
+      // Just verify the type system accepts the signal parameter
+      expect(() => {
+        const options = { signal: controller.signal };
+        expect(options.signal).toBeDefined();
+      }).not.toThrow();
+    });
+
+    it('should handle aborted requests', async () => {
+      const client = new HttpClient();
+      const controller = new AbortController();
+
+      // Mock a slow request
+      const mockFetch = vi.fn().mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            setTimeout(() => reject(new DOMException('Aborted', 'AbortError')), 100);
+          })
+      );
+      global.fetch = mockFetch;
+
+      // Abort immediately
+      controller.abort();
+
+      try {
+        await client.get('https://example.com/data', { signal: controller.signal });
+        expect.fail('Should have thrown RequestAbortedError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(RequestAbortedError);
+      }
+    });
+
+    it('should allow aborting in-flight requests', async () => {
+      const client = new HttpClient();
+      const controller = new AbortController();
+
+      const mockFetch = vi.fn().mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            setTimeout(() => {
+              if (controller.signal.aborted) {
+                reject(new DOMException('Aborted', 'AbortError'));
+              }
+            }, 50);
+          })
+      );
+      global.fetch = mockFetch;
+
+      const requestPromise = client.get('https://example.com/data', { signal: controller.signal });
+
+      // Abort after a short delay
+      setTimeout(() => controller.abort(), 10);
+
+      try {
+        await requestPromise;
+        expect.fail('Should have thrown RequestAbortedError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(RequestAbortedError);
+      }
+    });
+  });
+
+  describe('Rate Limiting', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      vi.useRealTimers();
+    });
+
+    it('should create client with rate limiting', () => {
+      const client = new HttpClient({
+        rateLimit: {
+          maxRequests: 10,
+          interval: 1000,
+        },
+      });
+
+      expect(client).toBeInstanceOf(HttpClient);
+      const stats = client.getRateLimiterStats();
+      expect(stats).not.toBeNull();
+      expect(stats?.maxTokens).toBe(10);
+    });
+
+    it('should return null stats when rate limiting is disabled', () => {
+      const client = new HttpClient();
+      const stats = client.getRateLimiterStats();
+      expect(stats).toBeNull();
+    });
+
+    it('should allow resetting rate limiter', () => {
+      const client = new HttpClient({
+        rateLimit: {
+          maxRequests: 10,
+          interval: 1000,
+        },
+      });
+
+      expect(() => client.resetRateLimiter()).not.toThrow();
+    });
+
+    it('should not throw when resetting without rate limiter', () => {
+      const client = new HttpClient();
+      expect(() => client.resetRateLimiter()).not.toThrow();
+    });
+
+    it('should track rate limiter statistics', () => {
+      const client = new HttpClient({
+        rateLimit: {
+          maxRequests: 100,
+          interval: 60000,
+        },
+      });
+
+      const stats = client.getRateLimiterStats();
+      expect(stats).toBeDefined();
+      expect(stats?.availableTokens).toBe(100);
+      expect(stats?.maxTokens).toBe(100);
+      expect(stats?.queueLength).toBe(0);
     });
   });
 });

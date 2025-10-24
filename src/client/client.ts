@@ -5,17 +5,20 @@
 
 import ky, { type KyInstance, type Options as KyOptions } from 'ky';
 
-import { NetworkError, TimeoutError } from '../types/error.js';
+import { NetworkError, RequestAbortedError, TimeoutError } from '../types/error.js';
 import { createLogger } from '../utils/logger.js';
 
 import { ResponseCache } from './cache.js';
+import { RateLimiter } from './rate-limiter.js';
 
 import type { HttpClientConfig, HttpHooks, HttpResponse, RequestOptions } from './types.js';
 
 /**
  * Default configuration values
  */
-const DEFAULT_CONFIG: Required<Omit<HttpClientConfig, 'baseUrl' | 'headers' | 'userAgent'>> = {
+const DEFAULT_CONFIG: Required<
+  Omit<HttpClientConfig, 'baseUrl' | 'headers' | 'userAgent' | 'rateLimit'>
+> = {
   timeout: 30000,
   retry: 3,
   cache: true,
@@ -29,6 +32,7 @@ const DEFAULT_CONFIG: Required<Omit<HttpClientConfig, 'baseUrl' | 'headers' | 'u
 export class HttpClient {
   private client: KyInstance;
   private cache: ResponseCache;
+  private rateLimiter?: RateLimiter;
   private config: HttpClientConfig;
   private hooks: HttpHooks = {};
   private logger = createLogger('HttpClient');
@@ -36,6 +40,11 @@ export class HttpClient {
   constructor(config: HttpClientConfig = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.cache = new ResponseCache(1000, this.config.cacheTtl);
+
+    // Initialize rate limiter if configured
+    if (this.config.rateLimit) {
+      this.rateLimiter = new RateLimiter(this.config.rateLimit);
+    }
 
     // Create ky instance with configuration
     const kyOptions: KyOptions = {
@@ -158,6 +167,7 @@ export class HttpClient {
       cacheKey,
       timeout = this.config.timeout,
       retry = this.config.retry,
+      signal,
       ...kyOptions
     } = options;
 
@@ -189,6 +199,17 @@ export class HttpClient {
       }
     }
 
+    // Apply rate limiting if configured
+    if (this.rateLimiter) {
+      await this.rateLimiter.acquire();
+      if (this.config.debug) {
+        const stats = this.rateLimiter.stats();
+        this.logger.debug(
+          `Rate limiter: ${stats.availableTokens}/${stats.maxTokens} tokens available`
+        );
+      }
+    }
+
     // Make request
     try {
       const kyRequestOptions: KyOptions = {
@@ -199,6 +220,7 @@ export class HttpClient {
           methods: ['get', 'head', 'options', 'trace'],
           statusCodes: [408, 413, 429, 500, 502, 503, 504],
         },
+        ...(signal && { signal }),
       };
 
       const response = await this.client(url, kyRequestOptions);
@@ -249,6 +271,8 @@ export class HttpClient {
       if (error instanceof Error) {
         if (error.name === 'TimeoutError') {
           nflError = new TimeoutError(`Request timeout: ${url}`, { url, timeout });
+        } else if (error.name === 'AbortError') {
+          nflError = new RequestAbortedError(`Request aborted: ${url}`, { url });
         } else {
           nflError = new NetworkError(`Network request failed: ${error.message}`, { url }, error);
         }
@@ -283,6 +307,24 @@ export class HttpClient {
    */
   evictExpiredCache(): number {
     return this.cache.evictExpired();
+  }
+
+  /**
+   * Get rate limiter statistics
+   */
+  getRateLimiterStats(): {
+    availableTokens: number;
+    maxTokens: number;
+    queueLength: number;
+  } | null {
+    return this.rateLimiter?.stats() ?? null;
+  }
+
+  /**
+   * Reset rate limiter
+   */
+  resetRateLimiter(): void {
+    this.rateLimiter?.reset();
   }
 
   /**

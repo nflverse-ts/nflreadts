@@ -11,6 +11,7 @@ export enum ErrorCode {
   NETWORK_ERROR = 'NETWORK_ERROR',
   TIMEOUT = 'TIMEOUT',
   RATE_LIMIT = 'RATE_LIMIT',
+  REQUEST_ABORTED = 'REQUEST_ABORTED',
 
   // Data errors
   DATA_NOT_FOUND = 'DATA_NOT_FOUND',
@@ -96,6 +97,16 @@ export class TimeoutError extends NflReadError {
   constructor(message: string, context?: Record<string, unknown>) {
     super(message, ErrorCode.TIMEOUT, context);
     this.name = 'TimeoutError';
+  }
+}
+
+/**
+ * Request aborted errors
+ */
+export class RequestAbortedError extends NflReadError {
+  constructor(message: string, context?: Record<string, unknown>) {
+    super(message, ErrorCode.REQUEST_ABORTED, context);
+    this.name = 'RequestAbortedError';
   }
 }
 

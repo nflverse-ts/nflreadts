@@ -6,6 +6,23 @@
 import type { Options as KyOptions } from 'ky';
 
 /**
+ * Rate limiter configuration
+ */
+export interface RateLimitConfig {
+  /**
+   * Maximum number of requests per interval
+   * @default 100
+   */
+  maxRequests: number;
+
+  /**
+   * Time interval in milliseconds
+   * @default 60000 (1 minute)
+   */
+  interval: number;
+}
+
+/**
  * HTTP client configuration options
  */
 export interface HttpClientConfig {
@@ -54,6 +71,12 @@ export interface HttpClientConfig {
    * @default false
    */
   debug?: boolean;
+
+  /**
+   * Rate limiting configuration
+   * @default undefined (no rate limiting)
+   */
+  rateLimit?: RateLimitConfig;
 }
 
 /**
@@ -85,6 +108,15 @@ export interface RequestOptions extends Omit<KyOptions, 'timeout' | 'retry' | 'c
    * Cache key (auto-generated if not provided)
    */
   cacheKey?: string;
+
+  /**
+   * AbortSignal to cancel the request
+   * @example
+   * const controller = new AbortController();
+   * const request = client.get('/api/data', { signal: controller.signal });
+   * // Later: controller.abort();
+   */
+  signal?: AbortSignal;
 }
 
 /**

@@ -28,7 +28,7 @@ export type {
 } from './config/index.js';
 
 // HTTP Client
-export { HttpClient, createHttpClient, ResponseCache } from './client/index.js';
+export { HttpClient, createHttpClient, ResponseCache, RateLimiter } from './client/index.js';
 
 export type {
   HttpClientConfig,
@@ -37,6 +37,7 @@ export type {
   ResponseFormat,
   HttpHooks,
   CacheEntry,
+  RateLimitConfig,
 } from './client/index.js';
 
 // Types
@@ -100,6 +101,7 @@ export {
   NflReadError,
   NetworkError,
   TimeoutError,
+  RequestAbortedError,
   RateLimitError,
   DataNotFoundError,
   InvalidDataError,
@@ -115,7 +117,13 @@ export {
 } from './types/index.js';
 
 // Utilities
-export type { DataFileType, FileFormat, CsvParseOptions, ParseResult } from './utils/index.js';
+export type {
+  DataFileType,
+  FileFormat,
+  CsvParseOptions,
+  ParseResult,
+  ParquetParseOptions,
+} from './utils/index.js';
 
 export {
   // Validation
@@ -193,6 +201,10 @@ export {
   toCsv,
   csvToJson,
   jsonToCsv,
+  parseParquet,
+  parseParquetFromUrl,
+  parseParquetFromFile,
+  parseParquetFromResponse,
   // Logger
   LogLevel,
   Logger,

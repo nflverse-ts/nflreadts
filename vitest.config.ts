@@ -11,6 +11,7 @@ export default defineConfig({
         'node_modules/',
         'dist/',
         'tests/',
+        '**/*.d.ts',
         '**/*.test.ts',
         '**/*.spec.ts',
         '**/types.ts',
@@ -18,6 +19,8 @@ export default defineConfig({
         '**/*.config.js',
         '**/*.config.cjs',
         '.eslintrc.cjs',
+        // Exclude index files (just re-exports)
+        '**/index.ts',
       ],
       thresholds: {
         lines: 80,

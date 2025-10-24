@@ -59,7 +59,7 @@ export interface HttpClientConfig {
 /**
  * Request options for individual requests
  */
-export interface RequestOptions extends Omit<KyOptions, 'timeout' | 'retry'> {
+export interface RequestOptions extends Omit<KyOptions, 'timeout' | 'retry' | 'cache'> {
   /**
    * Request-specific timeout (overrides client config)
    */

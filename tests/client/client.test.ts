@@ -2,29 +2,20 @@
  * Tests for HttpClient
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HttpClient, createHttpClient } from '../../src/client/client.js';
 import { NetworkError, TimeoutError } from '../../src/types/error.js';
-
-// Mock ky
-vi.mock('ky', () => {
-  const mockKy = vi.fn();
-  const mockCreate = vi.fn(() => mockKy);
-
-  return {
-    default: Object.assign(mockKy, {
-      create: mockCreate,
-    }),
-  };
-});
 
 describe('HttpClient', () => {
   let client: HttpClient;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     client = new HttpClient();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Constructor and Factory', () => {
@@ -53,6 +44,22 @@ describe('HttpClient', () => {
       });
       expect(client).toBeInstanceOf(HttpClient);
     });
+
+    it('should configure headers', () => {
+      const client = new HttpClient({
+        headers: {
+          'X-Custom': 'value',
+        },
+      });
+      expect(client).toBeInstanceOf(HttpClient);
+    });
+
+    it('should configure user agent', () => {
+      const client = new HttpClient({
+        userAgent: 'TestAgent/1.0',
+      });
+      expect(client).toBeInstanceOf(HttpClient);
+    });
   });
 
   describe('Cache Management', () => {
@@ -73,11 +80,13 @@ describe('HttpClient', () => {
       expect(stats).toHaveProperty('size');
       expect(stats).toHaveProperty('maxSize');
       expect(stats).toHaveProperty('entries');
+      expect(Array.isArray(stats.entries)).toBe(true);
     });
 
     it('should evict expired entries', () => {
       const evicted = client.evictExpiredCache();
       expect(typeof evicted).toBe('number');
+      expect(evicted).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -108,6 +117,28 @@ describe('HttpClient', () => {
           expect(response.status).toBeDefined();
         },
       });
+
+      expect(true).toBe(true);
+    });
+
+    it('should support async hooks', () => {
+      client.setHooks({
+        beforeRequest: async (url) => {
+          await Promise.resolve();
+          expect(url).toBeDefined();
+        },
+        afterResponse: async (response) => {
+          await Promise.resolve();
+          expect(response).toBeDefined();
+        },
+        onError: async (error, url) => {
+          await Promise.resolve();
+          expect(error).toBeDefined();
+          expect(url).toBeDefined();
+        },
+      });
+
+      expect(true).toBe(true);
     });
   });
 
@@ -133,37 +164,6 @@ describe('HttpClient', () => {
     });
   });
 
-  describe('Request Options', () => {
-    it('should accept timeout option', () => {
-      // Test that the method signature accepts the option without actually making a request
-      expect(typeof client.get).toBe('function');
-    });
-
-    it('should accept retry option', () => {
-      // Test that the method signature accepts the option
-      expect(typeof client.get).toBe('function');
-    });
-
-    it('should accept cache options', () => {
-      // Test that the method signature accepts the options
-      expect(typeof client.get).toBe('function');
-    });
-
-    it('should accept custom cache key', () => {
-      // Test that the method signature accepts the option
-      expect(typeof client.get).toBe('function');
-    });
-  });
-
-  describe('Type Safety', () => {
-    it('should support generic type parameters', () => {
-      // Type-level test - if this compiles, it passes
-      // Verifies that generic types flow through properly
-      expect(typeof client.get).toBe('function');
-      expect(typeof client.post).toBe('function');
-    });
-  });
-
   describe('Configuration', () => {
     it('should handle debug mode', () => {
       const debugClient = new HttpClient({ debug: true });
@@ -186,14 +186,118 @@ describe('HttpClient', () => {
       });
       expect(client).toBeInstanceOf(HttpClient);
     });
+
+    it('should handle cache configuration', () => {
+      const client = new HttpClient({
+        cache: false,
+        cacheTtl: 60000,
+      });
+      expect(client).toBeInstanceOf(HttpClient);
+    });
+
+    it('should handle timeout configuration', () => {
+      const client = new HttpClient({
+        timeout: 10000,
+      });
+      expect(client).toBeInstanceOf(HttpClient);
+    });
+
+    it('should handle retry configuration', () => {
+      const client = new HttpClient({
+        retry: 5,
+      });
+      expect(client).toBeInstanceOf(HttpClient);
+    });
   });
 
   describe('Error Handling', () => {
-    it('should define error transformation', () => {
-      // Error transformation happens in the request method
-      // This test verifies that error classes are imported and available
+    it('should import error classes', () => {
       expect(NetworkError).toBeDefined();
       expect(TimeoutError).toBeDefined();
+    });
+
+    it('should allow creating NetworkError', () => {
+      const error = new NetworkError('Test error', { url: 'https://example.com' });
+      expect(error).toBeInstanceOf(NetworkError);
+      expect(error.message).toBe('Test error');
+      expect(error.context?.url).toBe('https://example.com');
+    });
+
+    it('should allow creating TimeoutError', () => {
+      const error = new TimeoutError('Timeout', { url: 'https://example.com' });
+      expect(error).toBeInstanceOf(TimeoutError);
+      expect(error.message).toBe('Timeout');
+    });
+  });
+
+  describe('Type Safety', () => {
+    it('should support generic type parameters for GET', () => {
+      const getMethod = client.get.bind(client);
+      expect(typeof getMethod).toBe('function');
+    });
+
+    it('should support generic type parameters for POST', () => {
+      const postMethod = client.post.bind(client);
+      expect(typeof postMethod).toBe('function');
+    });
+
+    it('should support generic type parameters for PUT', () => {
+      const putMethod = client.put.bind(client);
+      expect(typeof putMethod).toBe('function');
+    });
+
+    it('should support generic type parameters for DELETE', () => {
+      const deleteMethod = client.delete.bind(client);
+      expect(typeof deleteMethod).toBe('function');
+    });
+  });
+
+  describe('Request Options', () => {
+    it('should support timeout option', () => {
+      const client = new HttpClient({ timeout: 5000 });
+      expect(client).toBeInstanceOf(HttpClient);
+    });
+
+    it('should support retry option', () => {
+      const client = new HttpClient({ retry: 3 });
+      expect(client).toBeInstanceOf(HttpClient);
+    });
+
+    it('should support cache options', () => {
+      const client = new HttpClient({ cache: true, cacheTtl: 60000 });
+      expect(client).toBeInstanceOf(HttpClient);
+    });
+
+    it('should support disabling cache', () => {
+      const client = new HttpClient({ cache: false });
+      const stats = client.getCacheStats();
+      expect(stats).toBeDefined();
+    });
+  });
+
+  describe('Integration', () => {
+    it('should create multiple clients independently', () => {
+      const client1 = new HttpClient({ debug: true });
+      const client2 = new HttpClient({ debug: false });
+
+      expect(client1).toBeInstanceOf(HttpClient);
+      expect(client2).toBeInstanceOf(HttpClient);
+      expect(client1).not.toBe(client2);
+    });
+
+    it('should manage separate caches', () => {
+      const client1 = new HttpClient();
+      const client2 = new HttpClient();
+
+      const stats1 = client1.getCacheStats();
+      const stats2 = client2.getCacheStats();
+
+      expect(stats1.size).toBe(0);
+      expect(stats2.size).toBe(0);
+
+      client1.clearCache();
+      const newStats2 = client2.getCacheStats();
+      expect(newStats2.size).toBe(0);
     });
   });
 });

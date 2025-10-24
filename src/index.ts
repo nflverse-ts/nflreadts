@@ -27,6 +27,18 @@ export type {
   Environment,
 } from './config/index.js';
 
+// HTTP Client
+export { HttpClient, createHttpClient, ResponseCache } from './client/index.js';
+
+export type {
+  HttpClientConfig,
+  RequestOptions,
+  HttpResponse,
+  ResponseFormat,
+  HttpHooks,
+  CacheEntry,
+} from './client/index.js';
+
 // Types
 export type {
   Season,

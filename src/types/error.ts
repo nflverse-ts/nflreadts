@@ -48,22 +48,16 @@ export class NflReadError extends Error {
    */
   public readonly context?: Record<string, unknown>;
 
-  /**
-   * Original error that caused this error
-   */
-  public readonly errorCause?: Error;
-
   constructor(
     message: string,
     code: ErrorCode = ErrorCode.UNKNOWN_ERROR,
     context?: Record<string, unknown>,
     cause?: Error
   ) {
-    super(message);
+    super(message, { cause });
     this.name = 'NflReadError';
     this.code = code;
     this.context = context ?? {};
-    this.errorCause = cause ?? new Error(message);
 
     // Maintains proper stack trace for where error was thrown (V8 only)
     if (Error.captureStackTrace) {

@@ -3,6 +3,7 @@
  * @module utils/parse
  */
 
+import { asyncBufferFromFile, asyncBufferFromUrl, parquetReadObjects } from 'hyparquet';
 import Papa from 'papaparse';
 
 import { InvalidDataError } from '../types/error.js';
@@ -262,4 +263,160 @@ export function csvToJson<T = Record<string, unknown>>(
  */
 export function jsonToCsv<T extends Record<string, unknown>>(data: T[]): string {
   return toCsv(data);
+}
+
+/**
+ * Parquet parsing options
+ */
+export interface ParquetParseOptions {
+  /**
+   * Columns to read (undefined = all columns)
+   */
+  columns?: string[];
+
+  /**
+   * Starting row index
+   */
+  rowStart?: number;
+
+  /**
+   * Ending row index (exclusive)
+   */
+  rowEnd?: number;
+}
+
+/**
+ * Helper to build parquet read options with proper typing
+ */
+function buildParquetReadOptions<T>(
+  file: T,
+  options: ParquetParseOptions
+): {
+  file: T;
+  columns?: string[];
+  rowStart?: number;
+  rowEnd?: number;
+} {
+  const readOptions: {
+    file: T;
+    columns?: string[];
+    rowStart?: number;
+    rowEnd?: number;
+  } = { file };
+
+  if (options.columns !== undefined) {
+    readOptions.columns = options.columns;
+  }
+  if (options.rowStart !== undefined) {
+    readOptions.rowStart = options.rowStart;
+  }
+  if (options.rowEnd !== undefined) {
+    readOptions.rowEnd = options.rowEnd;
+  }
+
+  return readOptions;
+}
+
+/**
+ * Parse Parquet data from ArrayBuffer
+ * @param buffer - ArrayBuffer containing Parquet data
+ * @param options - Parsing options
+ * @returns Parsed data as array of objects
+ */
+export async function parseParquet<T = Record<string, unknown>>(
+  buffer: ArrayBuffer,
+  options: ParquetParseOptions = {}
+): Promise<T[]> {
+  try {
+    // Create async buffer wrapper
+    const asyncBuffer = {
+      byteLength: buffer.byteLength,
+      slice(start: number, end?: number): Promise<ArrayBuffer> {
+        return Promise.resolve(buffer.slice(start, end));
+      },
+    };
+
+    const readOptions = buildParquetReadOptions(asyncBuffer, options);
+    const data = await parquetReadObjects(readOptions);
+
+    return data as T[];
+  } catch (error) {
+    throw new InvalidDataError(
+      `Failed to parse Parquet data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { options },
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+/**
+ * Parse Parquet file from URL
+ * @param url - URL to Parquet file
+ * @param options - Parsing options
+ * @returns Parsed data as array of objects
+ */
+export async function parseParquetFromUrl<T = Record<string, unknown>>(
+  url: string,
+  options: ParquetParseOptions = {}
+): Promise<T[]> {
+  try {
+    const file = await asyncBufferFromUrl({ url });
+    const readOptions = buildParquetReadOptions(file, options);
+    const data = await parquetReadObjects(readOptions);
+
+    return data as T[];
+  } catch (error) {
+    throw new InvalidDataError(
+      `Failed to parse Parquet from URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { url, options },
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+/**
+ * Parse Parquet file from local file path (Node.js only)
+ * @param filePath - Path to Parquet file
+ * @param options - Parsing options
+ * @returns Parsed data as array of objects
+ */
+export async function parseParquetFromFile<T = Record<string, unknown>>(
+  filePath: string,
+  options: ParquetParseOptions = {}
+): Promise<T[]> {
+  try {
+    const file = await asyncBufferFromFile(filePath);
+    const readOptions = buildParquetReadOptions(file, options);
+    const data = await parquetReadObjects(readOptions);
+
+    return data as T[];
+  } catch (error) {
+    throw new InvalidDataError(
+      `Failed to parse Parquet from file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { filePath, options },
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+/**
+ * Parse Parquet data from HTTP response
+ * @param response - Response object containing Parquet data
+ * @param options - Parsing options
+ * @returns Parsed data as array of objects
+ */
+export async function parseParquetFromResponse<T = Record<string, unknown>>(
+  response: Response,
+  options: ParquetParseOptions = {}
+): Promise<T[]> {
+  try {
+    const buffer = await response.arrayBuffer();
+    return parseParquet<T>(buffer, options);
+  } catch (error) {
+    throw new InvalidDataError(
+      `Failed to parse Parquet from response: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { url: response.url, options },
+      error instanceof Error ? error : undefined
+    );
+  }
 }

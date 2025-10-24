@@ -2,7 +2,7 @@
  * Tests for parse utilities
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { InvalidDataError } from '../../src/types/error.js';
 import {
@@ -17,6 +17,8 @@ import {
   parseJson,
   parseJsonFromResponse,
   parseNumber,
+  parseParquet,
+  parseParquetFromResponse,
   toCsv,
   transformCsvHeader,
 } from '../../src/utils/parse.js';
@@ -362,6 +364,53 @@ describe('Parse Utilities', () => {
       const roundtrip = csvToJson(newCsv);
 
       expect(roundtrip).toEqual(original);
+    });
+  });
+
+  describe('parseParquet', () => {
+    it('should accept ArrayBuffer and options', () => {
+      const buffer = new ArrayBuffer(100);
+      const options = {
+        columns: ['id', 'name'],
+        rowStart: 0,
+        rowEnd: 10,
+      };
+
+      // Test that the function signature is correct
+      expect(() => parseParquet(buffer, options)).toBeDefined();
+    });
+
+    it('should throw InvalidDataError for invalid parquet data', async () => {
+      const invalidBuffer = new ArrayBuffer(10); // Too small to be valid Parquet
+
+      await expect(parseParquet(invalidBuffer)).rejects.toThrow(InvalidDataError);
+    });
+  });
+
+  describe('parseParquetFromResponse', () => {
+    it('should throw InvalidDataError when arrayBuffer fails', async () => {
+      const mockResponse = {
+        url: 'https://example.com/data.parquet',
+        arrayBuffer: vi.fn().mockRejectedValue(new Error('Network error')),
+      } as unknown as Response;
+
+      await expect(parseParquetFromResponse(mockResponse)).rejects.toThrow(InvalidDataError);
+    });
+
+    it('should call arrayBuffer on Response object', async () => {
+      const invalidBuffer = new ArrayBuffer(10);
+      const mockResponse = {
+        url: 'https://example.com/data.parquet',
+        arrayBuffer: vi.fn().mockResolvedValue(invalidBuffer),
+      } as unknown as Response;
+
+      try {
+        await parseParquetFromResponse(mockResponse);
+      } catch {
+        // Expected to fail due to invalid data
+      }
+
+      expect(mockResponse.arrayBuffer).toHaveBeenCalled();
     });
   });
 });

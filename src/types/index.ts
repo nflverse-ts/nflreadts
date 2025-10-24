@@ -77,6 +77,7 @@ export {
   NetworkError,
   NflReadError,
   RateLimitError,
+  RequestAbortedError,
   TimeoutError,
   ValidationError,
 } from './error.js';

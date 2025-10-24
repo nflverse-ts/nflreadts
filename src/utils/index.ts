@@ -75,7 +75,7 @@ export {
 } from './url.js';
 
 // Parse utilities
-export type { CsvParseOptions, ParseResult } from './parse.js';
+export type { CsvParseOptions, ParseResult, ParquetParseOptions } from './parse.js';
 
 export {
   parseCsv,
@@ -92,6 +92,10 @@ export {
   toCsv,
   csvToJson,
   jsonToCsv,
+  parseParquet,
+  parseParquetFromUrl,
+  parseParquetFromFile,
+  parseParquetFromResponse,
 } from './parse.js';
 
 // Logger utilities

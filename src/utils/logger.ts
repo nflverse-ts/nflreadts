@@ -52,32 +52,6 @@ export class Logger {
   }
 
   /**
-   * Format log message
-   */
-  private formatMessage(level: string, message: string, ...args: unknown[]): string {
-    const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
-
-    if (args.length > 0) {
-      const argsStr = args
-        .map((arg) => {
-          if (typeof arg === 'object') {
-            try {
-              return JSON.stringify(arg);
-            } catch {
-              return String(arg);
-            }
-          }
-          return String(arg);
-        })
-        .join(' ');
-      return `${prefix} ${message} ${argsStr}`;
-    }
-
-    return `${prefix} ${message}`;
-  }
-
-  /**
    * Log a message
    */
   private log(level: LogLevel, levelName: string, message: string, ...args: unknown[]): void {
@@ -89,24 +63,6 @@ export class Logger {
     if (this.config.logger) {
       this.config.logger(levelName, message, ...args);
       return;
-    }
-
-    // Default console logging
-    const formattedMessage = this.formatMessage(levelName, message, ...args);
-
-    switch (level) {
-      case LogLevel.ERROR:
-        console.error(formattedMessage);
-        break;
-      case LogLevel.WARN:
-        console.warn(formattedMessage);
-        break;
-      case LogLevel.INFO:
-        console.log(formattedMessage);
-        break;
-      case LogLevel.DEBUG:
-        console.log(formattedMessage);
-        break;
     }
   }
 

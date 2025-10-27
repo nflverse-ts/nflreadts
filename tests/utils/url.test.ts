@@ -37,19 +37,24 @@ describe('URL Utilities', () => {
     vi.spyOn(configManager, 'getConfig').mockReturnValue({
       dataSources: {
         baseUrl: mockBaseUrl,
-        timeout: 30000,
-        retries: 3,
-        cache: true,
+        mirrors: new Array<string>('', ''),
       },
       cache: {
         enabled: true,
         maxSize: 100,
         ttl: 300000,
+        storage: 'memory',
       },
       logging: {
         level: 'info',
-        format: 'json',
-        destination: 'console',
+        debug: false,
+      },
+      http: {
+        timeout: 3000,
+        retries: 0,
+        retryDelay: 0,
+        userAgent: 'nflverse-test',
+        headers: {},
       },
     });
   });

@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ErrorCode, ValidationError } from '../../src/types/error.js';
+import { getCurrentSeason } from '../../src/utils/datetime.js';
 import {
   MAX_PLAYOFF_WEEK,
   MAX_REGULAR_SEASON_WEEK,
@@ -14,7 +15,6 @@ import {
   assertValidSeasonType,
   assertValidTeam,
   assertValidWeek,
-  getCurrentSeason,
   isValidSeason,
   isValidSeasonType,
   isValidTeam,

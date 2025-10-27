@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![CI](https://github.com/nflverse-ts/nflreadts/workflows/CI/badge.svg)](https://github.com/nflverse-ts/nflreadts/actions)
 [![codecov](https://codecov.io/gh/nflverse-ts/nflreadts/branch/main/graph/badge.svg)](https://codecov.io/gh/nflverse-ts/nflreadts)
-[![npm version](https://img.shields.io/npm/v/nflreadts.svg)](https://www.npmjs.com/package/nflreadts)
+[![npm version](https://img.shields.io/npm/v/@nflverse/nflreadts.svg)](https://www.npmjs.com/package/@nflverse/nflreadts)
 
 The TypeScript port of the [nflreadpy](https://github.com/nflverse/nflreadpy)/[nflreadr](https://github.com/nflverse/nflreadr) packages from the [nflverse](https://github.com/nflverse) team.
 
@@ -37,7 +37,7 @@ Current Phase: **Phase 1 - Configuration and Setup**
 > **Note:** Package is available on npm but in alpha stage
 
 ```bash
-npm install nflreadts
+npm install @nflverse/nflreadts
 ```
 
 ## Usage

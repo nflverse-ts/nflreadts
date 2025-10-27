@@ -89,6 +89,16 @@ export type {
   SeasonRange,
   WeekRange,
   Result,
+  PlayByPlayRecord,
+  PlayByPlayData,
+  LoadPbpOptions,
+  ParticipationRecord,
+  ParticipationData,
+  LoadParticipationOptions,
+  PlayerStatsRecord,
+  PlayerStatsData,
+  LoadPlayerStatsOptions,
+  SummaryLevel,
 } from './types/index.js';
 
 export {
@@ -212,3 +222,6 @@ export {
   resetLogger,
   createLogger,
 } from './utils/index.js';
+
+// Data loading functions
+export { loadPbp, loadParticipation, loadPlayerStats } from './data/index.js';

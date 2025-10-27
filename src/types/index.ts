@@ -34,7 +34,7 @@ export type {
   ValidTeamAbbr,
 } from './team.js';
 
-export { HISTORICAL_TEAMS, NFL_TEAMS } from './team.js';
+export { HISTORICAL_TEAMS, MIN_PARTICIPATION_SEASON, NFL_TEAMS } from './constants.js';
 
 // Player types
 export type {
@@ -85,3 +85,21 @@ export {
 export type { Result } from './error.js';
 
 export { Err, isErr, isOk, mapError, mapResult, Ok, unwrap, unwrapOr } from './error.js';
+
+// Play-by-play types
+export type { LoadPbpOptions, PlayByPlayData, PlayByPlayRecord } from './pbp.js';
+
+// Participation types
+export type {
+  LoadParticipationOptions,
+  ParticipationData,
+  ParticipationRecord,
+} from './participation.js';
+
+// Player stats types
+export type {
+  LoadPlayerStatsOptions,
+  PlayerStatsData,
+  PlayerStatsRecord,
+  SummaryLevel,
+} from './player-stats.js';

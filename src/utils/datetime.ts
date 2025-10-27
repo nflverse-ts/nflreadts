@@ -47,6 +47,14 @@ export function getSeasonFromDate(date: Date): Season {
 }
 
 /**
+ * Get the current NFL season
+ * Convenience function that returns the season for today's date
+ */
+export function getCurrentSeason(): Season {
+  return getSeasonFromDate(new Date());
+}
+
+/**
  * Get the approximate start date of an NFL season
  * Regular season typically starts the first Thursday after Labor Day (first Monday in September)
  */

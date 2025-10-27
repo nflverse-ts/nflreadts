@@ -3,11 +3,11 @@
  * @module utils/validation
  */
 
-import { ErrorCode, ValidationError } from '../types/error.js';
-import { HISTORICAL_TEAMS, NFL_TEAMS } from '../types/team.js';
-
 import type { Season, SeasonType, TeamAbbr, Week } from '../types/common.js';
+import { HISTORICAL_TEAMS, NFL_TEAMS } from '../types/constants.js';
+import { ErrorCode, ValidationError } from '../types/error.js';
 import type { AnyTeamAbbr } from '../types/team.js';
+import { getCurrentSeason } from './datetime.js';
 
 /**
  * Minimum valid NFL season (modern era)
@@ -28,20 +28,6 @@ export const MAX_PLAYOFF_WEEK = 22;
  * Valid season types
  */
 export const SEASON_TYPES: readonly SeasonType[] = ['REG', 'POST', 'PRE'] as const;
-
-/**
- * Get current NFL season based on date
- * NFL season starts in September
- */
-export function getCurrentSeason(): Season {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth(); // 0-11
-
-  // If we're in January-August, current season is previous year
-  // If we're in September-December, current season is current year
-  return month < 8 ? year - 1 : year;
-}
 
 /**
  * Validate a season number

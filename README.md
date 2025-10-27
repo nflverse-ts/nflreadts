@@ -21,16 +21,29 @@ nflreadts brings the power of nflverse data tools to the TypeScript/JavaScript e
 - Features are being implemented incrementally (see [ROADMAP](docs/ROADMAP.md))
 - Early adopters and contributors are welcome!
 
-Current Phase: **Phase 1 - Configuration and Setup**
+Current Phase: **Phase 2 - Data Loading (PBP, Participation, Player Stats Complete)**
 
-## Features (Planned)
+## Features
 
-- Load NFL play-by-play data
-- Access player statistics and rosters
-- Retrieve team schedules and game results
-- Full TypeScript support with comprehensive type definitions
-- Promise-based API for modern async workflows
-- Browser and Node.js compatibility
+### ✅ Available Now
+
+- **Play-by-Play Data**: Load comprehensive NFL play-by-play data with `loadPbp()`
+- **Player Statistics**: Load player stats with aggregation support via `loadPlayerStats()`
+- **Participation Data**: Load snap count and participation data with `loadParticipation()`
+- **Multiple Formats**: Support for both CSV and Parquet file formats
+- **Full TypeScript Support**: Comprehensive type definitions with 100+ typed fields
+- **Promise-based API**: Modern async/await workflows
+- **Smart Caching**: Built-in HTTP caching for improved performance
+- **Rate Limiting**: Automatic rate limiting to respect data source limits
+- **Browser and Node.js**: Universal compatibility
+
+### 🚧 Planned
+
+- Roster and player information
+- Team schedules and game results
+- Advanced statistics (Next Gen Stats, QBR)
+- Betting lines and fantasy data
+- Contract and draft information
 
 ## Installation
 
@@ -42,7 +55,36 @@ npm install @nflverse/nflreadts
 
 ## Usage
 
-> **Note:** Documentation will be available once the initial release is ready
+```typescript
+import { loadPbp, loadPlayerStats, loadParticipation } from '@nflverse/nflreadts';
+
+// Load play-by-play data for 2023 season
+const pbpResult = await loadPbp(2023);
+if (pbpResult.ok) {
+  const plays = pbpResult.value;
+  console.log(`Loaded ${plays.length} plays`);
+}
+
+// Load player stats with weekly breakdown
+const statsResult = await loadPlayerStats(2023, { summaryLevel: 'week' });
+
+// Load player stats aggregated for regular season
+const regStatsResult = await loadPlayerStats(2023, { summaryLevel: 'reg' });
+
+// Load participation/snap count data
+const participationResult = await loadParticipation(2023);
+
+// Load multiple seasons
+const multiSeasonPbp = await loadPbp([2022, 2023]);
+
+// Load all available seasons
+const allPbp = await loadPbp(true);
+
+// Use Parquet format for better performance
+const parquetPbp = await loadPbp(2023, { format: 'parquet' });
+```
+
+For more examples and detailed documentation, see the [API documentation](docs/) (coming soon).
 
 ## Related Projects
 

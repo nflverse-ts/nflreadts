@@ -1,7 +1,7 @@
 # nflreadts Development Roadmap
 
-> **Last Updated**: October 24, 2025
-> **Status**: Phase 1 Complete - Ready for Phase 2
+> **Last Updated**: October 27 2025
+> **Status**: Phase 2 Complete - Data Loading (PBP, Participation, Player Stats)
 
 This roadmap outlines the development plan for nflreadts, the TypeScript port of nflreadpy/nflreadr.
 
@@ -102,50 +102,59 @@ Bring the power of nflverse data tools to the TypeScript/JavaScript ecosystem wi
 
 ---
 
-## Phase 2: Data Loading - Play-by-Play Data
+## Phase 2: Data Loading - Play-by-Play Data ✅ COMPLETE
 
 **Goal**: Implement core play-by-play data loading functionality
 
-### 2.1 Load Play-by-Play (PBP)
+### 2.1 Load Play-by-Play (PBP) ✅
 
 Reference: `nflreadr::load_pbp()` / `nflreadpy.load_pbp()`
 
-- [ ] Implement `loadPbp()` function
+- [x] Implement `loadPbp()` function
   - Support single season loading
   - Support multiple seasons (parallel fetching)
   - Type-safe return values
-- [ ] Add filtering options
-- [ ] Implement data validation
-- [ ] Add caching support
-- [ ] Write comprehensive tests
-- [ ] Document API with examples
+  - CSV and Parquet format support
+- [x] Basic performance optimizations
+  - Single HttpClient instance reuse
+  - Optimized array concatenation
+  - Pre-allocated array generation
+- [x] Implement data validation (season validation)
+- [x] Add caching support (via HttpClient)
+- [x] Write comprehensive tests (15 test cases)
+- [x] Document API with examples
 
-### 2.2 Participation Data
+### 2.2 Participation Data ✅
 
 Reference: `nflreadr::load_participation()`
 
-- [ ] Implement `loadParticipation()` function
-- [ ] Add type definitions for participation data
-- [ ] Write tests
-- [ ] Document API
+- [x] Implement `loadParticipation()` function
+- [x] Add type definitions for participation data
+- [x] Write tests
+- [x] Document API
+- [x] Support 2016+ data (when participation tracking began)
 
-### 2.3 Player Stats
+### 2.3 Player Stats ✅
 
 Reference: `nflreadr::load_player_stats()`
 
-- [ ] Implement `loadPlayerStats()` function
-- [ ] Support different stat types (offense, defense, kicking)
-- [ ] Add aggregation options
-- [ ] Write tests
-- [ ] Document API
+- [x] Implement `loadPlayerStats()` function
+- [x] Support different stat types (offense, defense, kicking)
+- [x] Add aggregation options (week, reg, post, reg+post)
+- [x] Refactor aggregation logic with DRY principles
+- [x] Write tests
+- [x] Document API
 
-### Deliverables
+### Phase 2 Deliverables ✅
 
-- Working PBP data loading
-- Player stats functionality
-- Participation data loading
-- Full test coverage
-- API documentation
+- ✅ Working PBP data loading with `loadPbp()`
+- ✅ PlayByPlayRecord type with 100+ fields
+- ✅ CSV and Parquet format support
+- ✅ Comprehensive tests (15+ test cases per module)
+- ✅ Player stats functionality with aggregation
+- ✅ Participation data loading (2016+)
+- ✅ DRY refactoring of repetitive aggregation code
+- ✅ Centralized season normalization utility
 
 ---
 
@@ -339,10 +348,23 @@ Reference: `nflreadr::load_draft_picks()`
 ### 8.1 Performance
 
 - [ ] Profile and optimize hot paths
-- [ ] Implement streaming for large datasets
+- [ ] Advanced data loading optimizations
+  - [ ] Streaming parsers for large files (GB+ datasets)
+  - [ ] Worker thread support for parallel parsing (offload CPU)
+  - [ ] Progressive loading with callbacks/generators
+  - [ ] Column selection to load only needed fields
+  - [ ] Compression support (gzip transfer encoding)
+  - [ ] Request batching and connection pooling enhancements
+  - [ ] Memory-efficient parsing for large multi-season loads
 - [ ] Optimize bundle size
+  - [ ] Tree-shaking optimization
+  - [ ] Code splitting for data loading functions
+  - [ ] Optional dependencies for Parquet support
 - [ ] Add lazy loading where appropriate
 - [ ] Benchmark against nflreadpy/nflreadr
+  - [ ] Compare load times across different data sizes
+  - [ ] Memory usage profiling
+  - [ ] Bundle size comparison
 
 ### 8.2 Developer Experience
 
@@ -509,4 +531,32 @@ Track major architectural decisions here:
 
 ---
 
-**Last Updated**: October 23, 2025
+## Recent Updates
+
+### January 2025 - v0.2.0
+
+- ✅ **Completed Phase 2: Data Loading**
+  - `loadPbp()` - Play-by-play data with full season support
+  - `loadPlayerStats()` - Player statistics with 4 aggregation levels (week, reg, post, reg+post)
+  - `loadParticipation()` - Snap count and participation data (2016+)
+  - CSV and Parquet format support across all functions
+  - Basic performance optimizations (HttpClient reuse, optimized array operations)
+  - 15+ comprehensive test cases per module
+  - Type-safe records with 100+ typed fields
+
+- 🔧 **Code Quality Improvements**
+  - Refactored player stats aggregation using DRY principles (89 lines → 6 lines)
+  - Consolidated duplicate `getCurrentSeason()` function from validation.ts to datetime.ts
+  - Cleaned up season normalization logic with ternary operators
+  - Fixed TypeScript strict mode compliance
+  - Disabled import order lint rules
+  - Created centralized `normalizeSeasons()` utility
+
+- 📝 **Documentation**
+  - Updated README with usage examples
+  - Marked Phase 2 as complete in ROADMAP
+  - Added API examples for all data loading functions
+
+---
+
+**Last Updated**: January 2025

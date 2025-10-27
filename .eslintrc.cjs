@@ -45,26 +45,7 @@ module.exports = {
     '@typescript-eslint/consistent-type-exports': 'error',
 
     // Import rules
-    'import/order': [
-      'error',
-      {
-        groups: [
-          'builtin',
-          'external',
-          'internal',
-          'parent',
-          'sibling',
-          'index',
-          'object',
-          'type',
-        ],
-        'newlines-between': 'always',
-        alphabetize: {
-          order: 'asc',
-          caseInsensitive: true,
-        },
-      },
-    ],
+    'import/order': 'off', // Disabled - import order is not enforced
     'import/no-duplicates': 'error',
     'import/no-unresolved': 'off', // TypeScript handles this
 

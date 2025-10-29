@@ -5,223 +5,81 @@
  * @packageDocumentation
  */
 
+// Version
 export { version } from './version.js';
 
-// Configuration
+// ============================================================================
+// DATA LOADING FUNCTIONS - Main API
+// ============================================================================
+
 export {
-  configure,
-  getConfig,
-  ConfigManager,
-  DEFAULT_CONFIG,
-  detectEnvironment,
-  loadConfigFromEnv,
-} from './config/index.js';
+  loadDepthCharts,
+  loadParticipation,
+  loadPbp,
+  loadPlayers,
+  loadPlayerStats,
+  loadRosters,
+} from './data/index.js';
 
+// ============================================================================
+// CONFIGURATION - User-facing configuration
+// ============================================================================
+
+export { configure, getConfig } from './config/index.js';
+
+export type { NflReadConfig, PartialNflReadConfig } from './config/index.js';
+
+// ============================================================================
+// DATA TYPES - Types users need for function parameters and return values
+// ============================================================================
+
+// Record types (function return values)
 export type {
-  NflReadConfig,
-  PartialNflReadConfig,
-  HttpConfig,
-  CacheConfig,
-  DataSourceConfig,
-  LogConfig,
-  Environment,
-} from './config/index.js';
+  DepthChartRecord,
+  ParticipationRecord,
+  PlayByPlayRecord,
+  PlayerRecord,
+  PlayerStatsRecord,
+  RosterRecord,
+} from './types/index.js';
 
-// HTTP Client
-export { HttpClient, createHttpClient, ResponseCache, RateLimiter } from './client/index.js';
-
+// Options types (function parameters)
 export type {
-  HttpClientConfig,
-  RequestOptions,
-  HttpResponse,
-  ResponseFormat,
-  HttpHooks,
-  CacheEntry,
-  RateLimitConfig,
-} from './client/index.js';
+  LoadDepthChartsOptions,
+  LoadOptions,
+  LoadParticipationOptions,
+  LoadPbpOptions,
+  LoadPlayersOptions,
+  LoadPlayerStatsOptions,
+  LoadRostersOptions,
+} from './types/index.js';
 
-// Types
+// Common types used in data
 export type {
-  Season,
-  Week,
-  SeasonType,
-  TeamAbbr,
-  PlayerId,
-  GameId,
-  PlayId,
-  Position,
-  Side,
   Conference,
   Division,
-  FullDivision,
-  PlayType,
-  Down,
-  GameStatus,
-  DateString,
-  Timestamp,
-  Team,
-  TeamMap,
-  TeamColors,
-  ValidTeamAbbr,
-  HistoricalTeamAbbr,
-  AnyTeamAbbr,
-  Player,
-  PlayerStatus,
-  RosterEntry,
-  PlayerStats,
-  PassingStats,
-  RushingStats,
-  ReceivingStats,
-  DefensiveStats,
-  KickingStats,
-  RequireFields,
-  OptionalFields,
-  Nullable,
-  NullableFields,
-  UnwrapPromise,
-  ArrayElement,
-  DeepReadonly,
-  FilterOptions,
-  LoadOptions,
-  PaginatedResponse,
-  DataState,
-  Range,
-  SeasonRange,
-  WeekRange,
-  Result,
-  PlayByPlayRecord,
-  PlayByPlayData,
-  LoadPbpOptions,
-  ParticipationRecord,
-  ParticipationData,
-  LoadParticipationOptions,
-  PlayerStatsRecord,
-  PlayerStatsData,
-  LoadPlayerStatsOptions,
-  SummaryLevel,
+  GameId,
+  GameType,
+  PlayerId,
+  Position,
+  Season,
+  SeasonType,
+  TeamAbbr,
+  Week,
 } from './types/index.js';
 
-export {
-  NFL_TEAMS,
-  HISTORICAL_TEAMS,
-  isSuccess,
-  isError,
-  isLoading,
-  ErrorCode,
-  NflReadError,
-  NetworkError,
-  TimeoutError,
-  RequestAbortedError,
-  RateLimitError,
-  DataNotFoundError,
-  InvalidDataError,
-  ValidationError,
-  Ok,
-  Err,
-  isOk,
-  isErr,
-  unwrap,
-  unwrapOr,
-  mapResult,
-  mapError,
-} from './types/index.js';
+// ============================================================================
+// ERROR TYPES - For error handling
+// ============================================================================
 
-// Utilities
 export type {
-  DataFileType,
-  FileFormat,
-  CsvParseOptions,
-  ParseResult,
-  ParquetParseOptions,
-} from './utils/index.js';
-
-export {
-  // Validation
-  MIN_SEASON,
-  MAX_REGULAR_SEASON_WEEK,
-  MAX_PLAYOFF_WEEK,
-  SEASON_TYPES,
-  getCurrentSeason,
-  isValidSeason,
-  assertValidSeason,
-  isValidWeek,
-  assertValidWeek,
-  isValidTeam,
-  isValidTeamOrHistorical,
-  assertValidTeam,
-  isValidSeasonType,
-  assertValidSeasonType,
-  isValidPlayerId,
-  assertValidPlayerId,
-  validateSeasons,
-  validateTeams,
-  normalizeTeamAbbr,
-  // Date/time
-  parseDate,
-  formatDate,
-  getToday,
-  getSeasonFromDate,
-  getSeasonStartDate,
-  getSeasonEndDate,
-  isDateInSeason,
-  getCurrentWeek,
-  generateSeasonRange,
-  generateWeekRange,
-  getWeeksForSeasonType,
-  isFutureDate,
-  isPastDate,
-  daysBetween,
-  addDays,
-  formatDateLong,
-  formatDateShort,
-  // URL
-  buildNflverseUrl,
-  buildPbpUrl,
-  buildPlayerStatsUrl,
-  buildRosterUrl,
-  buildWeeklyRosterUrl,
-  buildScheduleUrl,
-  buildTeamsUrl,
-  buildPlayersUrl,
-  buildParticipationUrl,
-  buildDepthChartsUrl,
-  buildInjuriesUrl,
-  buildDraftPicksUrl,
-  buildContractsUrl,
-  buildNextGenStatsUrl,
-  buildSnapCountsUrl,
-  buildQueryString,
-  addQueryParams,
-  getFilenameFromUrl,
-  isNflverseUrl,
-  normalizeUrl,
-  joinUrlParts,
-  // Parse
-  parseCsv,
-  parseCsvFromResponse,
-  parseJson,
-  parseJsonFromResponse,
-  parseNumber,
-  parseBoolean,
-  parseIntSafe,
-  parseFloatSafe,
-  cleanColumnName,
-  transformCsvHeader,
-  detectDelimiter,
-  toCsv,
-  csvToJson,
-  jsonToCsv,
-  parseParquet,
-  parseParquetFromUrl,
-  parseParquetFromFile,
-  parseParquetFromResponse,
-  // Logger
-  LogLevel,
-  Logger,
-  getLogger,
-  resetLogger,
-  createLogger,
-} from './utils/index.js';
-
-// Data loading functions
-export { loadPbp, loadParticipation, loadPlayerStats } from './data/index.js';
+  DataNotFoundError,
+  ErrorCode,
+  InvalidDataError,
+  NetworkError,
+  NflReadError,
+  RateLimitError,
+  RequestAbortedError,
+  TimeoutError,
+  ValidationError,
+} from './types/index.js';

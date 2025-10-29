@@ -3,73 +3,50 @@
  * @module types
  */
 
-// Common types
+// ============================================================================
+// RECORD TYPES - What data loading functions return
+// ============================================================================
+
+export type { DepthChartRecord } from './depth-chart.js';
+export type { ParticipationRecord } from './participation.js';
+export type { PlayByPlayRecord } from './pbp.js';
+export type { PlayerStatsRecord } from './player-stats.js';
+export type { PlayerRecord } from './player.js';
+export type { RosterRecord } from './roster.js';
+
+// ============================================================================
+// OPTIONS TYPES - Parameters for data loading functions
+// ============================================================================
+
+export type { LoadDepthChartsOptions } from './depth-chart.js';
+export type { LoadParticipationOptions } from './participation.js';
+export type { LoadPbpOptions } from './pbp.js';
+export type { LoadPlayerStatsOptions } from './player-stats.js';
+export type { LoadPlayersOptions } from './player.js';
+export type { LoadRostersOptions } from './roster.js';
+export type { LoadOptions } from './utils.js';
+
+// ============================================================================
+// COMMON TYPES - Used in record types and parameters
+// ============================================================================
+
 export type {
   Conference,
-  DateString,
   Division,
-  Down,
-  FullDivision,
   GameId,
-  GameStatus,
+  GameType,
   PlayerId,
-  PlayId,
-  PlayType,
   Position,
   Season,
   SeasonType,
-  Side,
   TeamAbbr,
-  Timestamp,
   Week,
 } from './common.js';
 
-// Team types
-export type {
-  AnyTeamAbbr,
-  HistoricalTeamAbbr,
-  Team,
-  TeamColors,
-  TeamMap,
-  ValidTeamAbbr,
-} from './team.js';
+// ============================================================================
+// ERROR TYPES - For error handling
+// ============================================================================
 
-export { HISTORICAL_TEAMS, MIN_PARTICIPATION_SEASON, NFL_TEAMS } from './constants.js';
-
-// Player types
-export type {
-  DefensiveStats,
-  KickingStats,
-  PassingStats,
-  Player,
-  PlayerStats,
-  PlayerStatus,
-  ReceivingStats,
-  RosterEntry,
-  RushingStats,
-} from './player.js';
-
-// Utility types
-export type {
-  ArrayElement,
-  DataState,
-  DeepReadonly,
-  FilterOptions,
-  LoadOptions,
-  Nullable,
-  NullableFields,
-  OptionalFields,
-  PaginatedResponse,
-  Range,
-  RequireFields,
-  SeasonRange,
-  UnwrapPromise,
-  WeekRange,
-} from './utils.js';
-
-export { isError, isLoading, isSuccess } from './utils.js';
-
-// Error types
 export {
   DataNotFoundError,
   ErrorCode,
@@ -81,25 +58,3 @@ export {
   TimeoutError,
   ValidationError,
 } from './error.js';
-
-export type { Result } from './error.js';
-
-export { Err, isErr, isOk, mapError, mapResult, Ok, unwrap, unwrapOr } from './error.js';
-
-// Play-by-play types
-export type { LoadPbpOptions, PlayByPlayData, PlayByPlayRecord } from './pbp.js';
-
-// Participation types
-export type {
-  LoadParticipationOptions,
-  ParticipationData,
-  ParticipationRecord,
-} from './participation.js';
-
-// Player stats types
-export type {
-  LoadPlayerStatsOptions,
-  PlayerStatsData,
-  PlayerStatsRecord,
-  SummaryLevel,
-} from './player-stats.js';

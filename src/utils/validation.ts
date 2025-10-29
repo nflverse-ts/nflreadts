@@ -4,30 +4,17 @@
  */
 
 import type { Season, SeasonType, TeamAbbr, Week } from '../types/common.js';
-import { HISTORICAL_TEAMS, NFL_TEAMS } from '../types/constants.js';
+import {
+  HISTORICAL_TEAMS,
+  MAX_PLAYOFF_WEEK,
+  MAX_REGULAR_SEASON_WEEK,
+  MIN_SEASON,
+  NFL_TEAMS,
+  SEASON_TYPES,
+} from '../types/constants.js';
 import { ErrorCode, ValidationError } from '../types/error.js';
 import type { AnyTeamAbbr } from '../types/team.js';
 import { getCurrentSeason } from './datetime.js';
-
-/**
- * Minimum valid NFL season (modern era)
- */
-export const MIN_SEASON = 1999;
-
-/**
- * Maximum regular season week
- */
-export const MAX_REGULAR_SEASON_WEEK = 18;
-
-/**
- * Maximum playoff week
- */
-export const MAX_PLAYOFF_WEEK = 22;
-
-/**
- * Valid season types
- */
-export const SEASON_TYPES: readonly SeasonType[] = ['REG', 'POST', 'PRE'] as const;
 
 /**
  * Validate a season number

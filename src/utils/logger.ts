@@ -6,26 +6,8 @@
 import { getConfig } from '../config/manager.js';
 
 import type { LogConfig } from '../config/types.js';
-
-/**
- * Log level enum
- */
-export enum LogLevel {
-  ERROR = 0,
-  WARN = 1,
-  INFO = 2,
-  DEBUG = 3,
-}
-
-/**
- * Map log level string to number
- */
-const LOG_LEVEL_MAP: Record<string, LogLevel> = {
-  error: LogLevel.ERROR,
-  warn: LogLevel.WARN,
-  info: LogLevel.INFO,
-  debug: LogLevel.DEBUG,
-};
+import { LogLevel } from '../types/enums.js';
+import { LogLevelMap } from '../types/utils.js';
 
 /**
  * Logger class
@@ -41,7 +23,7 @@ export class Logger {
    * Get the current log level as a number
    */
   private getLogLevel(): LogLevel {
-    return LOG_LEVEL_MAP[this.config.level] ?? LogLevel.WARN;
+    return LogLevelMap[this.config.level] ?? LogLevel.WARN;
   }
 
   /**
@@ -123,12 +105,7 @@ export class Logger {
         originalLogger(level, `[${contextStr}] ${message}`, ...args);
       } else {
         // Will be handled by default console logging in log()
-        this.log(
-          LOG_LEVEL_MAP[level] ?? LogLevel.INFO,
-          level,
-          `[${contextStr}] ${message}`,
-          ...args
-        );
+        this.log(LogLevelMap[level] ?? LogLevel.INFO, level, `[${contextStr}] ${message}`, ...args);
       }
     };
 

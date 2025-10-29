@@ -5,7 +5,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as configManager from '../../src/config/manager.js';
-import { createLogger, getLogger, Logger, LogLevel, resetLogger } from '../../src/utils/logger.js';
+import { LogLevel } from '../../src/types/enums.js';
+import { createLogger, getLogger, Logger, resetLogger } from '../../src/utils/logger.js';
 
 import type { NflReadConfig } from '../../src/config/types.js';
 

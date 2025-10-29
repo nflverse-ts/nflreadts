@@ -77,10 +77,14 @@ export function parseCsv<T = Record<string, unknown>>(
 
   const result = Papa.parse<T>(csvString, parseConfig);
 
-  if (result.errors.length > 0) {
-    const errorMessages = result.errors.map((e) => e.message).join('; ');
+  // Filter out delimiter detection warnings - these are just informational
+  // PapaParse will still parse the CSV correctly with the default comma delimiter
+  const criticalErrors = result.errors.filter((e) => e.type !== 'Delimiter');
+
+  if (criticalErrors.length > 0) {
+    const errorMessages = criticalErrors.map((e) => e.message).join('; ');
     throw new InvalidDataError(`CSV parse errors: ${errorMessages}`, {
-      errors: result.errors,
+      errors: criticalErrors,
     });
   }
 

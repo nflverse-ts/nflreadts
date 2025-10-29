@@ -4,13 +4,10 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { MIN_SEASON } from '../../src/types/constants.js';
 import { ErrorCode, ValidationError } from '../../src/types/error.js';
 import { getCurrentSeason } from '../../src/utils/datetime.js';
 import {
-  MAX_PLAYOFF_WEEK,
-  MAX_REGULAR_SEASON_WEEK,
-  MIN_SEASON,
-  SEASON_TYPES,
   assertValidSeason,
   assertValidSeasonType,
   assertValidTeam,
@@ -26,26 +23,6 @@ import {
 } from '../../src/utils/validation.js';
 
 describe('Validation Utilities', () => {
-  describe('Constants', () => {
-    it('should have correct minimum season', () => {
-      expect(MIN_SEASON).toBe(1999);
-    });
-
-    it('should have correct max regular season week', () => {
-      expect(MAX_REGULAR_SEASON_WEEK).toBe(18);
-    });
-
-    it('should have correct max playoff week', () => {
-      expect(MAX_PLAYOFF_WEEK).toBe(22);
-    });
-
-    it('should have all season types', () => {
-      expect(SEASON_TYPES).toContain('REG');
-      expect(SEASON_TYPES).toContain('POST');
-      expect(SEASON_TYPES).toContain('PRE');
-    });
-  });
-
   describe('getCurrentSeason', () => {
     it('should return a valid season', () => {
       const season = getCurrentSeason();

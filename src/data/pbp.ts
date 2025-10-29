@@ -8,14 +8,12 @@ import { getConfig } from '../config/manager.js';
 import type { Season } from '../types/common.js';
 import { DataNotFoundError, Err, NetworkError, Ok, type Result } from '../types/error.js';
 import type { LoadPbpOptions, PlayByPlayData, PlayByPlayRecord } from '../types/pbp.js';
-import {
-  assertValidSeason,
-  buildPbpUrl,
-  createLogger,
-  getCurrentSeason,
-  parseCsv,
-  parseParquet,
-} from '../utils';
+
+import { createLogger } from '../utils/logger.js';
+import { parseCsv, parseParquet } from '../utils/parse.js';
+import { normalizeSeasons } from '../utils/seasons.js';
+import { buildPbpUrl } from '../utils/url.js';
+import { assertValidSeason } from '../utils/validation.js';
 
 const logger = createLogger('loadPbp');
 
@@ -112,37 +110,6 @@ export async function loadPbp(
     logger.error('Failed to load PBP data', error);
     return Err(error instanceof Error ? error : new Error(String(error)));
   }
-}
-
-/**
- * Normalize seasons parameter into array of season numbers
- * Uses optimized array generation for better performance
- */
-function normalizeSeasons(seasons?: Season | Season[] | true): Season[] {
-  // If undefined, use current season
-  if (seasons === undefined) {
-    return [getCurrentSeason()];
-  }
-
-  // If true, return all available seasons (1999-present)
-  if (seasons === true) {
-    const currentSeason = getCurrentSeason();
-    const yearCount = currentSeason - 1999 + 1;
-    // Pre-allocate array with known size for better performance
-    const allSeasons: Season[] = new Array<number>(yearCount);
-    for (let i = 0; i < yearCount; i++) {
-      allSeasons[i] = 1999 + i;
-    }
-    return allSeasons;
-  }
-
-  // If array, return as-is
-  if (Array.isArray(seasons)) {
-    return seasons;
-  }
-
-  // If single season, wrap in array
-  return [seasons];
 }
 
 /**

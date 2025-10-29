@@ -13,14 +13,12 @@ import type {
   ParticipationData,
   ParticipationRecord,
 } from '../types/participation.js';
-import {
-  assertValidSeason,
-  buildParticipationUrl,
-  createLogger,
-  normalizeSeasons,
-  parseCsv,
-  parseParquet,
-} from '../utils';
+
+import { createLogger } from '../utils/logger.js';
+import { parseCsv, parseParquet } from '../utils/parse.js';
+import { normalizeSeasons } from '../utils/seasons.js';
+import { buildParticipationUrl } from '../utils/url.js';
+import { assertValidSeason } from '../utils/validation.js';
 
 const logger = createLogger('loadParticipation');
 
@@ -75,7 +73,7 @@ export async function loadParticipation(
 
   try {
     // Determine which seasons to load (participation data available from 2016+)
-    const seasonsToLoad = normalizeSeasons(seasons, true);
+    const seasonsToLoad = normalizeSeasons(seasons, { minSeason: MIN_PARTICIPATION_SEASON });
 
     logger.debug(`Loading participation data for seasons: ${seasonsToLoad.join(', ')}`);
 

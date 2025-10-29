@@ -13,14 +13,12 @@ import type {
   PlayerStatsRecord,
   SummaryLevel,
 } from '../types/player-stats.js';
-import {
-  assertValidSeason,
-  buildPlayerStatsUrl,
-  createLogger,
-  normalizeSeasons,
-  parseCsv,
-  parseParquet,
-} from '../utils';
+
+import { createLogger } from '../utils/logger.js';
+import { parseCsv, parseParquet } from '../utils/parse.js';
+import { normalizeSeasons } from '../utils/seasons.js';
+import { buildPlayerStatsUrl } from '../utils/url.js';
+import { assertValidSeason } from '../utils/validation.js';
 
 const logger = createLogger('loadPlayerStats');
 

@@ -4,6 +4,7 @@
  */
 
 import type { DateString, PlayerId, Position, Season, TeamAbbr } from './common.js';
+import type { LoadOptions } from './utils.js';
 
 /**
  * Basic player information
@@ -249,4 +250,230 @@ export interface KickingStats extends PlayerStats {
   xp_made?: number;
   xp_att?: number;
   xp_pct?: number;
+}
+
+/**
+ * Comprehensive player database record
+ *
+ * The nflverse players dataset - single source of truth for NFL player IDs
+ * and biographical information across various data sources.
+ *
+ * @see https://nflreadr.nflverse.com/reference/load_players.html
+ */
+export interface PlayerRecord {
+  /**
+   * GSIS ID (primary identifier for play-by-play)
+   */
+  gsis_id: string | null;
+
+  /**
+   * ESPN player ID
+   */
+  espn_id: number | null;
+
+  /**
+   * Pro Football Focus player ID
+   */
+  pff_id: number | null;
+
+  /**
+   * Pro Football Reference player ID
+   */
+  pfr_id: string | null;
+
+  /**
+   * Over The Cap player ID
+   */
+  otc_id: string | null;
+
+  /**
+   * Elias Sports Bureau player ID
+   */
+  esb_id: string | null;
+
+  /**
+   * Sleeper API player ID
+   */
+  sleeper_id: string | null;
+
+  /**
+   * Sportradar player ID
+   */
+  sportradar_id: string | null;
+
+  /**
+   * FantasyData player ID
+   */
+  fantasy_data_id: number | null;
+
+  /**
+   * Yahoo player ID
+   */
+  yahoo_id: number | null;
+
+  /**
+   * Rotowire player ID
+   */
+  rotowire_id: number | null;
+
+  /**
+   * Player display name
+   */
+  display_name: string;
+
+  /**
+   * Short name (e.g., "P.Mahomes")
+   */
+  short_name: string | null;
+
+  /**
+   * First name
+   */
+  first_name: string | null;
+
+  /**
+   * Last name
+   */
+  last_name: string | null;
+
+  /**
+   * Suffix (e.g., "Jr.", "III")
+   */
+  suffix: string | null;
+
+  /**
+   * Football name (nickname or commonly used name)
+   */
+  football_name: string | null;
+
+  /**
+   * Height in inches
+   */
+  height: number | null;
+
+  /**
+   * Weight in pounds
+   */
+  weight: number | null;
+
+  /**
+   * Birth date
+   */
+  birth_date: DateString | null;
+
+  /**
+   * College attended (usually the last one)
+   */
+  college: string | null;
+
+  /**
+   * High school attended
+   */
+  high_school: string | null;
+
+  /**
+   * Draft year
+   */
+  draft_year: Season | null;
+
+  /**
+   * Draft round
+   */
+  draft_round: number | null;
+
+  /**
+   * Draft pick number within round
+   */
+  draft_pick: number | null;
+
+  /**
+   * Overall draft pick number
+   */
+  draft_ovr: number | null;
+
+  /**
+   * Team that drafted the player
+   */
+  draft_team: TeamAbbr | null;
+
+  /**
+   * Player position
+   */
+  position: Position | null;
+
+  /**
+   * Position group
+   */
+  position_group: string | null;
+
+  /**
+   * PFF position designation
+   */
+  pff_position: string | null;
+
+  /**
+   * Jersey number
+   */
+  jersey_number: number | null;
+
+  /**
+   * Player status
+   */
+  status: PlayerStatus | null;
+
+  /**
+   * PFF status
+   */
+  pff_status: string | null;
+
+  /**
+   * Current team
+   */
+  team: TeamAbbr | null;
+
+  /**
+   * Years of NFL experience
+   */
+  years_exp: number | null;
+
+  /**
+   * Entry year (first year eligible for NFL)
+   */
+  entry_year: Season | null;
+
+  /**
+   * Rookie year (year rookie eligibility was lost)
+   */
+  rookie_year: Season | null;
+
+  /**
+   * Headshot image URL
+   */
+  headshot_url: string | null;
+
+  /**
+   * GSIS IT API player ID
+   */
+  gsis_it_id: string | null;
+
+  /**
+   * ESB ID hash identifier
+   */
+  smart_id: number | null;
+
+  /**
+   * Timestamp of last update
+   */
+  update_dt: DateString | null;
+}
+
+/**
+ * Options for loading player data
+ */
+export interface LoadPlayersOptions extends LoadOptions {
+  /**
+   * Data format - 'csv' or 'parquet'
+   * @default 'csv'
+   */
+  format?: 'csv' | 'parquet';
 }

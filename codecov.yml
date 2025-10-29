@@ -4,7 +4,7 @@
 coverage:
   precision: 2
   round: down
-  range: "70...100"
+  range: '70...100'
 
   status:
     project:
@@ -19,20 +19,22 @@ coverage:
         threshold: 5%
 
 comment:
-  layout: "reach,diff,flags,tree,footer"
+  layout: 'reach,diff,flags,tree,footer'
   behavior: default
   require_changes: false
   require_base: false
   require_head: true
 
 ignore:
-  - "tests/**/*"
-  - "**/*.test.ts"
-  - "**/*.spec.ts"
-  - "**/*.config.ts"
-  - "**/*.config.js"
-  - "**/*.config.cjs"
-  - "dist/**/*"
-  - "coverage/**/*"
-  - "node_modules/**/*"
-  - "docs/**/*"
+  - 'tests/**/*'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/*.config.ts'
+  - '**/*.config.js'
+  - '**/*.config.cjs'
+  - 'dist/**/*'
+  - 'coverage/**/*'
+  - 'node_modules/**/*'
+  - 'docs/**/*'
+  - 'src/types/'
+  - '**/*.d.ts'

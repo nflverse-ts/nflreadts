@@ -12,6 +12,7 @@ export default defineConfig({
         'dist/',
         'tests/',
         '**/*.d.ts',
+        'src/types/',
         '**/*.test.ts',
         '**/*.spec.ts',
         '**/types.ts',

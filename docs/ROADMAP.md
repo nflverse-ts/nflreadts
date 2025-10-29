@@ -1,7 +1,7 @@
 # nflreadts Development Roadmap
 
-> **Last Updated**: October 27 2025
-> **Status**: Phase 2 Complete - Data Loading (PBP, Participation, Player Stats)
+> **Last Updated**: January 28 2025
+> **Status**: Phase 3 Complete - Roster and Player Data
 
 This roadmap outlines the development plan for nflreadts, the TypeScript port of nflreadpy/nflreadr.
 
@@ -158,45 +158,50 @@ Reference: `nflreadr::load_player_stats()`
 
 ---
 
-## Phase 3: Roster and Player Data
+## Phase 3: Roster and Player Data ✅ COMPLETE
 
 **Goal**: Implement roster and player information functionality
 
-### 3.1 Rosters
+### 3.1 Rosters ✅
 
 Reference: `nflreadr::load_rosters()`
 
-- [ ] Implement `loadRosters()` function
-- [ ] Support single/multiple seasons
-- [ ] Add player filtering
-- [ ] Write tests
-- [ ] Document API
+- [x] Implement `loadRosters()` function
+- [x] Support single/multiple seasons
+- [x] Add player filtering
+- [x] Write tests
+- [x] Document API
 
-### 3.2 Players
+### 3.2 Players ✅
 
 Reference: `nflreadr::load_players()`
 
-- [ ] Implement `loadPlayers()` function
-- [ ] Add comprehensive player information types
-- [ ] Support search/filter functionality
-- [ ] Write tests
-- [ ] Document API
+- [x] Implement `loadPlayers()` function
+- [x] Add comprehensive player information types
+- [x] Support search/filter functionality
+- [x] Write tests
+- [x] Document API
 
-### 3.3 Depth Charts
+### 3.3 Depth Charts ✅
 
 Reference: `nflreadr::load_depth_charts()`
 
-- [ ] Implement `loadDepthCharts()` function
-- [ ] Add depth chart types
-- [ ] Write tests
-- [ ] Document API
+- [x] Implement `loadDepthCharts()` function
+- [x] Add depth chart types
+- [x] Write tests
+- [x] Document API
 
-### Deliverables
+### Phase 3 Deliverables ✅
 
-- Roster loading functionality
-- Player data access
-- Depth chart data
-- Tests and documentation
+- ✅ Roster loading functionality (`loadRosters()`)
+- ✅ RosterRecord type with 36 fields (season, team, position, player info, IDs, etc.)
+- ✅ Player data access (`loadPlayers()`)
+- ✅ PlayerRecord type with comprehensive player information
+- ✅ Depth chart data (`loadDepthCharts()`)
+- ✅ DepthChartRecord type with position hierarchy (2001+)
+- ✅ CSV and Parquet format support for all functions
+- ✅ Comprehensive tests with >80% coverage
+- ✅ Complete API documentation
 
 ---
 
@@ -440,7 +445,6 @@ Reference: `nflreadr::load_draft_picks()`
 
 ### Potential Features
 
-- [ ] Real-time game data (if available)
 - [ ] GraphQL API wrapper
 - [ ] React hooks package (`@nflreadts/react`)
 - [ ] CLI tool for data exploration
@@ -450,55 +454,6 @@ Reference: `nflreadr::load_draft_picks()`
 - [ ] WebSocket support for live data
 - [ ] Offline-first capabilities
 - [ ] Database integration helpers
-
----
-
-## Success Metrics
-
-### Technical
-
-- Build time < 5 seconds
-- Test suite runs < 30 seconds
-- Bundle size < 50KB (minified + gzipped) for core
-- Type coverage > 95%
-- Code coverage > 90%
-
-### Community
-
-- > 100 GitHub stars in first 6 months
-- Active community contributions
-- Positive feedback from nflverse team
-- Adoption by TypeScript/JS NFL data projects
-
-### Quality
-
-- Zero critical bugs in production
-- API stability (no breaking changes in minor versions)
-- Comprehensive documentation
-- Fast issue response time (< 48 hours)
-
----
-
-## Dependencies to Research
-
-### Required
-
-- TypeScript 5.0+
-- Node.js 18+ / Modern browsers
-- Fetch API (native or polyfill)
-
-### Build Tools
-
-- tsup / rollup / esbuild (TBD)
-- vitest (testing)
-- eslint + prettier (linting/formatting)
-
-### Optional
-
-- papaparse (CSV parsing)
-- parquet-js (Parquet file support)
-- zod (runtime validation)
-- cache manager (advanced caching)
 
 ---
 
@@ -533,7 +488,33 @@ Track major architectural decisions here:
 
 ## Recent Updates
 
-### January 2025 - v0.2.0
+### October 28 2025 - v0.3.0
+
+- ✅ **Completed Phase 3: Roster and Player Data**
+  - `loadRosters()` - Season-level roster data (1920-present)
+  - `loadPlayers()` - All-time player database with comprehensive info
+  - `loadDepthCharts()` - Weekly depth charts showing position rankings (2001+)
+  - RosterRecord type with 36 fields (season, team, position, player info, IDs)
+  - PlayerRecord type with birth info, draft data, college, status
+  - DepthChartRecord type with position hierarchy and ranking
+  - CSV and Parquet format support for all functions
+  - Comprehensive tests with >80% coverage
+
+- 🔧 **Code Quality & Architecture Improvements**
+  - Refactored public API exports - reduced from ~150 exports to ~30 essential ones
+  - Shrunk internal module exports (config, types, utils) to only public-facing APIs
+  - Removed src/utils/index.ts (all internal utilities now imported directly)
+  - Better separation of public vs internal APIs
+  - Improved tree-shaking and bundle size optimization
+  - Disabled non-null assertion ESLint warnings
+  - Fixed depth chart test suite (Date parsing from CSV dynamic typing)
+
+- 📝 **Documentation**
+  - Marked Phase 3 as complete in ROADMAP
+  - Updated status to reflect Phase 3 completion
+  - Added comprehensive deliverables for Phase 3
+
+### October 27 2025 - v0.2.0
 
 - ✅ **Completed Phase 2: Data Loading**
   - `loadPbp()` - Play-by-play data with full season support
@@ -559,4 +540,4 @@ Track major architectural decisions here:
 
 ---
 
-**Last Updated**: January 2025
+**Last Updated**: October 28, 2025

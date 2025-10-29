@@ -1,4 +1,4 @@
-## Type System Documentation
+# Type System Documentation
 
 nflreadts provides a comprehensive, type-safe API for working with NFL data. This document describes the type system.
 
@@ -42,7 +42,7 @@ const gameId: GameId = '2023_01_KC_PHI';
 ```typescript
 import type { Position, PlayType, Down } from 'nflreadts';
 
-const position: Position = 'QB';  // QB, RB, WR, etc.
+const position: Position = 'QB'; // QB, RB, WR, etc.
 const playType: PlayType = 'pass'; // pass, run, punt, etc.
 const down: Down = 1; // 1, 2, 3, or 4
 ```
@@ -53,7 +53,7 @@ const down: Down = 1; // 1, 2, 3, or 4
 import type { Conference, Division, FullDivision } from 'nflreadts';
 
 const conf: Conference = 'AFC'; // 'AFC' | 'NFC'
-const div: Division = 'West';   // 'East' | 'West' | 'North' | 'South'
+const div: Division = 'West'; // 'East' | 'West' | 'North' | 'South'
 const fullDiv: FullDivision = 'AFC West';
 ```
 
@@ -214,12 +214,7 @@ type NullableExample = Nullable<Example>;
 ### Data Loading Types
 
 ```typescript
-import type {
-  LoadOptions,
-  FilterOptions,
-  PaginatedResponse,
-  DataState,
-} from 'nflreadts';
+import type { LoadOptions, FilterOptions, PaginatedResponse, DataState } from 'nflreadts';
 
 // Load options for API calls
 const options: LoadOptions = {
@@ -308,7 +303,7 @@ try {
   throw new NflReadError(
     'Something went wrong',
     ErrorCode.UNKNOWN_ERROR,
-    { season: 2023 }, // context
+    { season: 2023 } // context
   );
 } catch (error) {
   if (error instanceof NflReadError) {
@@ -347,20 +342,20 @@ throw new ValidationError('Invalid season', ErrorCode.INVALID_SEASON, { season: 
 import { ErrorCode } from 'nflreadts';
 
 // Available error codes
-ErrorCode.NETWORK_ERROR
-ErrorCode.TIMEOUT
-ErrorCode.RATE_LIMIT
-ErrorCode.DATA_NOT_FOUND
-ErrorCode.INVALID_DATA
-ErrorCode.PARSE_ERROR
-ErrorCode.INVALID_SEASON
-ErrorCode.INVALID_WEEK
-ErrorCode.INVALID_TEAM
-ErrorCode.INVALID_PLAYER
-ErrorCode.INVALID_PARAMETER
-ErrorCode.CONFIG_ERROR
-ErrorCode.CACHE_ERROR
-ErrorCode.UNKNOWN_ERROR
+ErrorCode.NETWORK_ERROR;
+ErrorCode.TIMEOUT;
+ErrorCode.RATE_LIMIT;
+ErrorCode.DATA_NOT_FOUND;
+ErrorCode.INVALID_DATA;
+ErrorCode.PARSE_ERROR;
+ErrorCode.INVALID_SEASON;
+ErrorCode.INVALID_WEEK;
+ErrorCode.INVALID_TEAM;
+ErrorCode.INVALID_PLAYER;
+ErrorCode.INVALID_PARAMETER;
+ErrorCode.CONFIG_ERROR;
+ErrorCode.CACHE_ERROR;
+ErrorCode.UNKNOWN_ERROR;
 ```
 
 ## Result Pattern
@@ -410,9 +405,7 @@ const doubled = mapResult(result, (x) => x * 2);
 
 // Map error
 const error = Err(new Error('Failed'));
-const mapped = mapError(error, (e) =>
-  new NflReadError(e.message, ErrorCode.NETWORK_ERROR)
-);
+const mapped = mapError(error, (e) => new NflReadError(e.message, ErrorCode.NETWORK_ERROR));
 // mapped = Err(NflReadError)
 ```
 
@@ -453,7 +446,7 @@ import type { Season, Week, TeamAbbr, ValidTeamAbbr } from 'nflreadts';
 function getTeamSchedule(
   team: ValidTeamAbbr, // Only accepts valid team abbreviations
   season: Season,
-  week?: Week,
+  week?: Week
 ): Promise<Schedule[]> {
   // Implementation
 }

@@ -1,3 +1,5 @@
+import type { SeasonType } from './common';
+
 /**
  *  Farthest season back for which player participation data exists
  */
@@ -58,3 +60,28 @@ export const NFL_TEAMS = [
   'SF',
   'SEA',
 ] as const;
+
+/**
+ * Minimum valid NFL season (modern era)
+ */
+export const MIN_SEASON = 1999;
+
+/**
+ * Maximum regular season week
+ */
+export const MAX_REGULAR_SEASON_WEEK = 18;
+
+/**
+ * Maximum playoff week
+ */
+export const MAX_PLAYOFF_WEEK = 22;
+
+/**
+ * Valid season types
+ */
+export const SEASON_TYPES: readonly SeasonType[] = ['REG', 'POST', 'PRE'] as const;
+
+/**
+ * Minimum season with depth chart data available
+ */
+export const MIN_DEPTH_CHART_SEASON = 2001;

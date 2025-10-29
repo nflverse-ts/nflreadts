@@ -1,3 +1,5 @@
+import { LogLevel } from './enums';
+
 /**
  * Utility types and patterns
  * @module types/utils
@@ -161,3 +163,36 @@ export type SeasonRange = Range<number>;
  * Type for week range
  */
 export type WeekRange = Range<number>;
+
+/**
+ * Configuration options for season normalization
+ */
+export interface NormalizeSeasonsOptions {
+  /**
+   * Minimum valid season
+   * @default 1999
+   */
+  minSeason?: number;
+
+  /**
+   * Maximum valid season
+   * @default current season
+   */
+  maxSeason?: number;
+
+  /**
+   * Default season when input is undefined
+   * @default current season
+   */
+  defaultSeason?: number;
+}
+
+/**
+ * Map log level string to number
+ */
+export const LogLevelMap: Record<string, LogLevel> = {
+  error: LogLevel.ERROR,
+  warn: LogLevel.WARN,
+  info: LogLevel.INFO,
+  debug: LogLevel.DEBUG,
+};

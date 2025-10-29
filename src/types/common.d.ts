@@ -146,3 +146,8 @@ export type DateString = string;
  * Timestamp string in ISO format
  */
 export type Timestamp = string;
+
+/**
+ * Game type for roster entries
+ */
+export type GameType = 'REG' | 'POST' | 'PRE';

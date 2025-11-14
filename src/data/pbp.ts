@@ -9,13 +9,15 @@ import type { Season } from '../types/common.js';
 import { DataNotFoundError, Err, NetworkError, Ok, type Result } from '../types/error.js';
 import type { LoadPbpOptions, PlayByPlayData, PlayByPlayRecord } from '../types/pbp.js';
 
-import { createLogger } from '../utils/logger.js';
+import { createLogger, type Logger } from '../utils/logger.js';
 import { parseCsv, parseParquet } from '../utils/parse.js';
 import { normalizeSeasons } from '../utils/seasons.js';
 import { buildPbpUrl } from '../utils/url.js';
 import { assertValidSeason } from '../utils/validation.js';
 
-const logger = createLogger('loadPbp');
+// Lazy logger initialization to avoid module-level side effects
+let logger: Logger | undefined;
+const getLogger = () => logger ?? (logger = createLogger('loadPbp'));
 
 /**
  * Load play-by-play data for one or more NFL seasons
@@ -64,7 +66,7 @@ export async function loadPbp(
     // Determine which seasons to load
     const seasonsToLoad = normalizeSeasons(seasons);
 
-    logger.debug(`Loading PBP data for seasons: ${seasonsToLoad.join(', ')}`);
+    getLogger().debug(`Loading PBP data for seasons: ${seasonsToLoad.join(', ')}`);
 
     // Validate all seasons upfront
     for (const season of seasonsToLoad) {
@@ -103,11 +105,11 @@ export async function loadPbp(
     const allData =
       dataArrays.length === 1 ? dataArrays[0]! : ([] as PlayByPlayData).concat(...dataArrays);
 
-    logger.debug(`Loaded ${allData.length} play-by-play records`);
+    getLogger().debug(`Loaded ${allData.length} play-by-play records`);
 
     return Ok(allData);
   } catch (error) {
-    logger.error('Failed to load PBP data', error);
+    getLogger().error('Failed to load PBP data', error);
     return Err(error instanceof Error ? error : new Error(String(error)));
   }
 }
@@ -125,7 +127,7 @@ async function loadPbpForSeason(
     // Build URL for the season's data
     const url = buildPbpUrl(season, format);
 
-    logger.debug(`Fetching PBP data from: ${url}`);
+    getLogger().debug(`Fetching PBP data from: ${url}`);
 
     // Fetch the data
     const response = await client.get(url);
@@ -157,12 +159,12 @@ async function loadPbpForSeason(
       data = parseResult.data;
     }
 
-    logger.debug(`Parsed ${data.length} records for season ${season}`);
+    getLogger().debug(`Parsed ${data.length} records for season ${season}`);
 
     return Ok(data);
   } catch (error) {
     if (error instanceof Error) {
-      logger.error(`Failed to load PBP for season ${season}`, error);
+      getLogger().error(`Failed to load PBP for season ${season}`, error);
 
       // Convert to appropriate error type
       if (error.message.includes('fetch') || error.message.includes('network')) {

@@ -14,13 +14,15 @@ import type {
   ParticipationRecord,
 } from '../types/participation.js';
 
-import { createLogger } from '../utils/logger.js';
+import { createLogger, type Logger } from '../utils/logger.js';
 import { parseCsv, parseParquet } from '../utils/parse.js';
 import { normalizeSeasons } from '../utils/seasons.js';
 import { buildParticipationUrl } from '../utils/url.js';
 import { assertValidSeason } from '../utils/validation.js';
 
-const logger = createLogger('loadParticipation');
+// Lazy logger initialization to avoid module-level side effects
+let logger: Logger | undefined;
+const getLogger = () => logger ?? (logger = createLogger('loadParticipation'));
 
 // Participation data is available from 2016 onward
 
@@ -75,7 +77,7 @@ export async function loadParticipation(
     // Determine which seasons to load (participation data available from 2016+)
     const seasonsToLoad = normalizeSeasons(seasons, { minSeason: MIN_PARTICIPATION_SEASON });
 
-    logger.debug(`Loading participation data for seasons: ${seasonsToLoad.join(', ')}`);
+    getLogger().debug(`Loading participation data for seasons: ${seasonsToLoad.join(', ')}`);
 
     // Validate all seasons upfront (both general validation and participation-specific)
     for (const season of seasonsToLoad) {
@@ -119,11 +121,11 @@ export async function loadParticipation(
     const allData =
       dataArrays.length === 1 ? dataArrays[0]! : ([] as ParticipationData).concat(...dataArrays);
 
-    logger.debug(`Loaded ${allData.length} participation records`);
+    getLogger().debug(`Loaded ${allData.length} participation records`);
 
     return Ok(allData);
   } catch (error) {
-    logger.error('Failed to load participation data', error);
+    getLogger().error('Failed to load participation data', error);
     return Err(error instanceof Error ? error : new Error(String(error)));
   }
 }
@@ -140,7 +142,7 @@ async function loadParticipationForSeason(
     // Build URL for the season's data
     const url = buildParticipationUrl(season, format);
 
-    logger.debug(`Fetching participation data from: ${url}`);
+    getLogger().debug(`Fetching participation data from: ${url}`);
 
     // Fetch the data
     const response = await client.get(url);
@@ -171,12 +173,12 @@ async function loadParticipationForSeason(
       data = parseResult.data;
     }
 
-    logger.debug(`Parsed ${data.length} participation records for season ${season}`);
+    getLogger().debug(`Parsed ${data.length} participation records for season ${season}`);
 
     return Ok(data);
   } catch (error) {
     if (error instanceof Error) {
-      logger.error(`Failed to load participation data for season ${season}`, error);
+      getLogger().error(`Failed to load participation data for season ${season}`, error);
 
       // Convert to appropriate error type
       if (error.message.includes('fetch') || error.message.includes('network')) {

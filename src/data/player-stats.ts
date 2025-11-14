@@ -14,13 +14,15 @@ import type {
   SummaryLevel,
 } from '../types/player-stats.js';
 
-import { createLogger } from '../utils/logger.js';
+import { createLogger, type Logger } from '../utils/logger.js';
 import { parseCsv, parseParquet } from '../utils/parse.js';
 import { normalizeSeasons } from '../utils/seasons.js';
 import { buildPlayerStatsUrl } from '../utils/url.js';
 import { assertValidSeason } from '../utils/validation.js';
 
-const logger = createLogger('loadPlayerStats');
+// Lazy logger initialization to avoid module-level side effects
+let logger: Logger | undefined;
+const getLogger = () => logger ?? (logger = createLogger('loadPlayerStats'));
 
 /**
  * Load player statistics for one or more NFL seasons
@@ -74,7 +76,7 @@ export async function loadPlayerStats(
     // Determine which seasons to load
     const seasonsToLoad = normalizeSeasons(seasons);
 
-    logger.debug(
+    getLogger().debug(
       `Loading player stats for seasons: ${seasonsToLoad.join(', ')}, level: ${summaryLevel}`
     );
 
@@ -113,11 +115,11 @@ export async function loadPlayerStats(
     const allData =
       dataArrays.length === 1 ? dataArrays[0]! : ([] as PlayerStatsData).concat(...dataArrays);
 
-    logger.debug(`Loaded ${allData.length} player stats records`);
+    getLogger().debug(`Loaded ${allData.length} player stats records`);
 
     return Ok(allData);
   } catch (error) {
-    logger.error('Failed to load player stats', error);
+    getLogger().error('Failed to load player stats', error);
     return Err(error instanceof Error ? error : new Error(String(error)));
   }
 }
@@ -136,7 +138,7 @@ async function loadPlayerStatsForSeason(
     // Note: summaryLevel affects which file we fetch
     const url = buildPlayerStatsUrl(season, format);
 
-    logger.debug(`Fetching player stats from: ${url}`);
+    getLogger().debug(`Fetching player stats from: ${url}`);
 
     // Fetch the data
     const response = await client.get(url);
@@ -171,14 +173,14 @@ async function loadPlayerStatsForSeason(
     // Apply summary level filtering/aggregation
     data = applySummaryLevel(data, summaryLevel);
 
-    logger.debug(
+    getLogger().debug(
       `Parsed ${data.length} player stats records for season ${season} (level: ${summaryLevel})`
     );
 
     return Ok(data);
   } catch (error) {
     if (error instanceof Error) {
-      logger.error(`Failed to load player stats for season ${season}`, error);
+      getLogger().error(`Failed to load player stats for season ${season}`, error);
 
       // Convert to appropriate error type
       if (error.message.includes('fetch') || error.message.includes('network')) {

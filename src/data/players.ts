@@ -5,11 +5,15 @@
 
 import { HttpClient } from '../client/client.js';
 import type { LoadPlayersOptions, PlayerRecord } from '../types';
-import { getLogger } from '../utils/logger.js';
+import { Err, NetworkError, Ok, type Result } from '../types/error.js';
+import { createLogger, type Logger } from '../utils/logger.js';
 import { parseCsv, parseParquet } from '../utils/parse.js';
 import { buildPlayersUrl } from '../utils/url.js';
+import { assertValidFormat } from '../utils/validation.js';
 
-const logger = getLogger();
+// Lazy logger initialization to avoid module-level side effects
+let logger: Logger | undefined;
+const getLogger = () => logger ?? (logger = createLogger('players'));
 
 /**
  * Load all-time player database
@@ -21,54 +25,84 @@ const logger = getLogger();
  * multiple sources with cross-referenced IDs.
  *
  * @param options - Load options including format preference
- * @returns Promise resolving to array of player records
+ * @returns Result containing array of player records or an error
  *
  * @example
  * ```typescript
  * // Load all players (CSV format)
- * const players = await loadPlayers();
+ * const result = await loadPlayers();
+ * if (result.ok) {
+ *   console.log(`Loaded ${result.value.length} players`);
+ *
+ *   // Find a specific player
+ *   const mahomes = result.value.find(p => p.display_name === 'Patrick Mahomes');
+ *   console.log(mahomes?.gsis_id); // '00-0033873'
+ * } else {
+ *   console.error('Error loading players:', result.error);
+ * }
  *
  * // Load using Parquet format for better performance
- * const players = await loadPlayers({ format: 'parquet' });
- *
- * // Find a specific player
- * const mahomes = players.find(p => p.display_name === 'Patrick Mahomes');
- * console.log(mahomes?.gsis_id); // '00-0033873'
+ * const parquetResult = await loadPlayers({ format: 'parquet' });
+ * if (parquetResult.ok) {
+ *   const players = parquetResult.value;
+ *   // Process players...
+ * }
  * ```
  *
  * @see https://nflreadr.nflverse.com/reference/load_players.html
  */
-export async function loadPlayers(options: LoadPlayersOptions = {}): Promise<PlayerRecord[]> {
+export async function loadPlayers(
+  options: LoadPlayersOptions = {}
+): Promise<Result<PlayerRecord[], Error>> {
   const { format = 'csv', ...loadOptions } = options;
 
-  logger.info(`Loading players data (format: ${format})`);
+  try {
+    // Validate format parameter
+    assertValidFormat(format);
 
-  const client = new HttpClient();
+    getLogger().info(`Loading players data (format: ${format})`);
 
-  // Build URL for the format
-  const url = buildPlayersUrl(format);
+    const client = new HttpClient();
 
-  logger.debug(`Fetching from: ${url}`);
+    // Build URL for the format
+    const url = buildPlayersUrl(format);
 
-  // Fetch the data
-  const response = await client.get(url, loadOptions);
+    getLogger().debug(`Fetching from: ${url}`);
 
-  // Parse based on format
-  let data: PlayerRecord[];
+    // Fetch the data
+    const response = await client.get(url, loadOptions);
 
-  if (format === 'parquet') {
-    const buffer = response.data as ArrayBuffer;
-    data = await parseParquet<PlayerRecord>(buffer);
-  } else {
-    const csvString =
-      typeof response.data === 'string'
-        ? response.data
-        : new TextDecoder().decode(response.data as ArrayBuffer);
-    const parseResult = parseCsv<PlayerRecord>(csvString);
-    data = parseResult.data;
+    // Parse based on format
+    let data: PlayerRecord[];
+
+    if (format === 'parquet') {
+      const buffer = response.data as ArrayBuffer;
+      data = await parseParquet<PlayerRecord>(buffer);
+    } else {
+      const csvString =
+        typeof response.data === 'string'
+          ? response.data
+          : new TextDecoder().decode(response.data as ArrayBuffer);
+      const parseResult = parseCsv<PlayerRecord>(csvString);
+      data = parseResult.data;
+    }
+
+    getLogger().info(`Loaded ${data.length} player records`);
+
+    return Ok(data);
+  } catch (error) {
+    getLogger().error('Failed to load players', error);
+    if (error instanceof Error) {
+      // Convert to appropriate error type
+      if (error.message.includes('fetch') || error.message.includes('network')) {
+        return Err(
+          new NetworkError('Network error loading player data', {
+            originalError: error.message,
+          })
+        );
+      }
+      return Err(error);
+    }
+    return Err(new Error(String(error)));
   }
-
-  logger.info(`Loaded ${data.length} player records`);
-
-  return data;
 }

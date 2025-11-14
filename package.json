@@ -24,6 +24,7 @@
   "license": "MIT",
   "author": "Riel St. Amand <riel.stamand@gmail.com>",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

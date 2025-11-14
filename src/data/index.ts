@@ -9,3 +9,5 @@ export { loadPbp } from './pbp.js';
 export { loadPlayerStats } from './player-stats.js';
 export { loadPlayers } from './players.js';
 export { loadRosters } from './rosters.js';
+export { loadSchedules } from './schedules.js';
+export { loadTeams } from './teams.js';

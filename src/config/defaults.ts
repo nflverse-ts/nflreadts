@@ -9,6 +9,17 @@ import type { Environment, NflReadConfig } from './types.js';
 
 /**
  * Detect the current runtime environment
+ * Checks for Node.js, browser, or unknown environment
+ *
+ * @returns Environment type ('node', 'browser', or 'unknown')
+ *
+ * @example
+ * ```typescript
+ * const env = detectEnvironment();
+ * if (env === 'node') {
+ *   console.log('Running in Node.js');
+ * }
+ * ```
  */
 export function detectEnvironment(): Environment {
   // Check for Node.js
@@ -58,6 +69,16 @@ export const DEFAULT_CONFIG: NflReadConfig = {
 
 /**
  * Get environment-specific default overrides
+ * Returns configuration adjustments based on the runtime environment
+ *
+ * @param env - Environment type
+ * @returns Partial configuration with environment-specific defaults
+ *
+ * @example
+ * ```typescript
+ * const defaults = getEnvironmentDefaults('browser');
+ * // Returns browser-optimized config (smaller cache, etc.)
+ * ```
  */
 export function getEnvironmentDefaults(env: Environment): Partial<NflReadConfig> {
   switch (env) {

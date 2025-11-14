@@ -47,8 +47,10 @@ describe('loadRosters', () => {
 
       const result = await loadRosters();
 
-      expect(result).toHaveLength(1);
-      expect(result[0]?.full_name).toBe('Patrick Mahomes');
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0]?.full_name).toBe('Patrick Mahomes');
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
         expect.stringContaining('roster_2024.csv'),
@@ -69,8 +71,10 @@ describe('loadRosters', () => {
 
       const result = await loadRosters(2023);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]?.full_name).toBe('Josh Allen');
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0]?.full_name).toBe('Josh Allen');
       expect(mockGet).toHaveBeenCalledWith(
         expect.stringContaining('roster_2023.csv'),
         expect.any(Object)
@@ -98,7 +102,9 @@ describe('loadRosters', () => {
 
       const result = await loadRosters([2022, 2023]);
 
-      expect(result).toHaveLength(2);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(2);
       expect(mockGet).toHaveBeenCalledTimes(2);
       expect(mockGet).toHaveBeenCalledWith(
         expect.stringContaining('roster_2022.csv'),
@@ -124,8 +130,8 @@ describe('loadRosters', () => {
 
       const _result = await loadRosters(true);
 
-      // Should call for many seasons (1920-2024)
-      expect(mockGet.mock.calls.length).toBeGreaterThan(100);
+      // Should call for many seasons (1920-2024 = 105 seasons)
+      expect(mockGet.mock.calls.length).toBe(105);
       expect(mockGet).toHaveBeenCalledWith(
         expect.stringContaining('roster_1920.csv'),
         expect.any(Object)
@@ -139,17 +145,28 @@ describe('loadRosters', () => {
 
   describe('validation', () => {
     it('should reject seasons before 1920', async () => {
-      await expect(loadRosters(1919)).rejects.toThrow(ValidationError);
-      await expect(loadRosters(1919)).rejects.toThrow('before the minimum season');
+      const result = await loadRosters(1919);
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toBeInstanceOf(ValidationError);
+      expect(result.error.message).toContain('Invalid season: 1919');
+      expect(result.error.message).toContain('Must be between 1920 and 2024');
     });
 
     it('should reject future seasons', async () => {
-      await expect(loadRosters(2025)).rejects.toThrow(ValidationError);
-      await expect(loadRosters(2025)).rejects.toThrow('in the future');
+      const result = await loadRosters(2025);
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toBeInstanceOf(ValidationError);
+      expect(result.error.message).toContain('Invalid season: 2025');
+      expect(result.error.message).toContain('Must be between 1920 and 2024');
     });
 
     it('should reject invalid season in array', async () => {
-      await expect(loadRosters([2023, 2025])).rejects.toThrow(ValidationError);
+      const result = await loadRosters([2023, 2025]);
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toBeInstanceOf(ValidationError);
     });
 
     it('should accept 1920 (minimum valid season)', async () => {
@@ -165,8 +182,10 @@ describe('loadRosters', () => {
 
       const result = await loadRosters(1920);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]?.season).toBe(1920);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0]?.season).toBe(1920);
     });
 
     it('should accept current season (maximum valid season)', async () => {
@@ -182,8 +201,10 @@ describe('loadRosters', () => {
 
       const result = await loadRosters(2024);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]?.season).toBe(2024);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0]?.season).toBe(2024);
     });
   });
 
@@ -245,9 +266,11 @@ describe('loadRosters', () => {
 
       const result = await loadRosters(2023);
 
-      expect(result).toHaveLength(1);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
 
-      const player = result[0]!;
+      const player = result.value[0]!;
       expect(player.season).toBe(2023);
       expect(player.team).toBe('KC');
       expect(player.full_name).toBe('Patrick Mahomes');
@@ -276,8 +299,10 @@ describe('loadRosters', () => {
 
       const result = await loadRosters(2023);
 
-      expect(result).toHaveLength(1);
-      const player = result[0]!;
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      const player = result.value[0]!;
       expect(player.depth_chart_position).toBeNull();
       expect(player.jersey_number).toBeNull();
       expect(player.high_school).toBeNull();
@@ -331,17 +356,20 @@ describe('loadRosters', () => {
 
       const result = await loadRosters([2022, 2023]);
 
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
       // Should have 2 + 3 = 5 records total
-      expect(result).toHaveLength(5);
+      expect(result.value).toHaveLength(5);
 
       // Check that both seasons are present
-      const seasons = new Set(result.map((r) => r.season));
+      const seasons = new Set(result.value.map((r) => r.season));
       expect(seasons.has(2022)).toBe(true);
       expect(seasons.has(2023)).toBe(true);
 
       // Check record counts per season
-      const season2022Count = result.filter((r) => r.season === 2022).length;
-      const season2023Count = result.filter((r) => r.season === 2023).length;
+      const season2022Count = result.value.filter((r) => r.season === 2022).length;
+      const season2023Count = result.value.filter((r) => r.season === 2023).length;
       expect(season2022Count).toBe(2);
       expect(season2023Count).toBe(3);
     });
@@ -359,7 +387,9 @@ describe('loadRosters', () => {
 
       const result = await loadRosters(2023);
 
-      expect(result).toHaveLength(0);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(0);
     });
   });
 

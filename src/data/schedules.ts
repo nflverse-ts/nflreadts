@@ -1,10 +1,10 @@
 /**
- * Load roster data
- * @module data/rosters
+ * Load schedule and game data
+ * @module data/schedules
  */
 
 import type { Season } from '../types/common.js';
-import type { LoadRostersOptions, RosterRecord } from '../types/roster.js';
+import type { LoadSchedulesOptions, ScheduleRecord } from '../types/schedule.js';
 
 import { HttpClient } from '../client/client.js';
 import { getConfig } from '../config/manager.js';
@@ -13,67 +13,69 @@ import { getCurrentSeason } from '../utils/datetime.js';
 import { createLogger, type Logger } from '../utils/logger.js';
 import { parseCsv, parseParquet } from '../utils/parse.js';
 import { normalizeSeasons } from '../utils/seasons.js';
-import { buildRosterUrl } from '../utils/url.js';
+import { buildScheduleUrl } from '../utils/url.js';
 import { assertValidFormat } from '../utils/validation.js';
 import { validateSeasons } from '../validation/index.js';
 
 // Lazy logger initialization to avoid module-level side effects
 let logger: Logger | undefined;
-const getLogger = () => logger ?? (logger = createLogger('rosters'));
+const getLogger = () => logger ?? (logger = createLogger('schedules'));
 
 /**
- * Load season-level NFL roster data
+ * Load NFL game schedule data
  *
- * Returns roster information for specified season(s). Data includes player
- * biographical information, team assignments, positions, and various player IDs
- * across different data sources.
+ * Returns game and schedule information for specified season(s). Data includes
+ * game identifiers, team matchups, scores, betting lines, weather conditions,
+ * and various game metadata. Data is maintained by Lee Sharpe.
  *
- * Data is available from 1920 to the current season.
+ * Schedule data is available from 1999 to the current season.
  *
  * @param seasons - Season(s) to load. Can be:
  *   - Single season number (e.g., 2023)
  *   - Array of seasons (e.g., [2022, 2023])
- *   - `true` to load ALL available seasons (1920-present) - use with caution!
+ *   - `true` to load ALL available seasons (1999-present)
  *   - Omit to load current season (or previous season if before March)
  * @param options - Load options including format and caching
- * @returns Result containing array of roster records or an error
+ * @returns Result containing array of schedule records or an error
  *
  * @example
  * ```typescript
- * // Load current season roster
- * const result = await loadRosters();
+ * // Load current season schedule
+ * const result = await loadSchedules();
  * if (result.ok) {
- *   console.log(`Loaded ${result.value.length} roster entries`);
+ *   const schedule = result.value;
+ *   console.log(`Loaded ${schedule.length} games`);
+ *
+ *   // Filter for playoff games
+ *   const playoffs = schedule.filter(game => game.game_type !== 'REG');
+ *
+ *   // Get games for a specific team
+ *   const chiefs = schedule.filter(game =>
+ *     game.home_team === 'KC' || game.away_team === 'KC'
+ *   );
  * } else {
- *   console.error('Error loading rosters:', result.error);
+ *   console.error('Error loading schedule:', result.error);
  * }
  *
- * // Load specific season with error handling
- * const result2023 = await loadRosters(2023);
- * if (result2023.ok) {
- *   const rosters = result2023.value;
- *   // Process rosters...
- * }
+ * // Load specific season
+ * const result2023 = await loadSchedules(2023);
  *
  * // Load multiple seasons
- * const multiResult = await loadRosters([2022, 2023]);
- * if (multiResult.ok) {
- *   console.log(`Loaded ${multiResult.value.length} total roster entries`);
- * }
+ * const multiResult = await loadSchedules([2022, 2023]);
  *
- * // Load all seasons (careful - this is a LOT of data!)
- * const allResult = await loadRosters(true);
+ * // Load all available seasons
+ * const allResult = await loadSchedules(true);
  *
  * // Use Parquet format for better performance
- * const parquetResult = await loadRosters(2023, { format: 'parquet' });
+ * const parquetResult = await loadSchedules(2023, { format: 'parquet' });
  * ```
  *
- * @see https://nflreadr.nflverse.com/reference/load_rosters.html
+ * @see https://nflreadr.nflverse.com/reference/load_schedules.html
  */
-export async function loadRosters(
+export async function loadSchedules(
   seasons?: Season | Season[] | true,
-  options: LoadRostersOptions = {}
-): Promise<Result<RosterRecord[], Error>> {
+  options: LoadSchedulesOptions = {}
+): Promise<Result<ScheduleRecord[], Error>> {
   const { format = 'csv', ...loadOptions } = options;
 
   try {
@@ -82,7 +84,7 @@ export async function loadRosters(
 
     // Determine which seasons to load
     const currentSeason = getCurrentSeason();
-    const minSeason = 1920;
+    const minSeason = 1999;
 
     // Normalize seasons input
     const seasonsToLoad = normalizeSeasons(seasons, {
@@ -91,7 +93,7 @@ export async function loadRosters(
       defaultSeason: currentSeason,
     });
 
-    getLogger().info(`Loading rosters for seasons: ${seasonsToLoad.join(', ')}`);
+    getLogger().info(`Loading schedules for seasons: ${seasonsToLoad.join(', ')}`);
 
     // Validate all seasons using centralized validation
     const validationResult = validateSeasons(seasonsToLoad, {
@@ -106,7 +108,7 @@ export async function loadRosters(
     }
 
     // Build URLs for all seasons
-    const urls = seasonsToLoad.map((season) => buildRosterUrl(season, format));
+    const urls = seasonsToLoad.map((season) => buildScheduleUrl(season, format));
 
     // Fetch all seasons in parallel
     const config = getConfig();
@@ -117,23 +119,23 @@ export async function loadRosters(
       cacheTtl: config.cache.ttl,
       debug: config.logging.debug,
     });
-    const datasets: RosterRecord[][] = [];
+    const datasets: ScheduleRecord[][] = [];
 
     const fetchPromises = urls.map(async (url) => {
-      getLogger().debug(`Fetching roster data from: ${url}`);
+      getLogger().debug(`Fetching schedule data from: ${url}`);
 
       const response = await client.get(url, loadOptions);
 
       // Parse based on format
       if (format === 'parquet') {
         const buffer = response.data as ArrayBuffer;
-        return parseParquet<RosterRecord>(buffer);
+        return parseParquet<ScheduleRecord>(buffer);
       } else {
         const csvString =
           typeof response.data === 'string'
             ? response.data
             : new TextDecoder().decode(response.data as ArrayBuffer);
-        const parseResult = parseCsv<RosterRecord>(csvString);
+        const parseResult = parseCsv<ScheduleRecord>(csvString);
         return parseResult.data;
       }
     });
@@ -145,7 +147,7 @@ export async function loadRosters(
 
     // Pre-allocate result array for better performance
     const totalRows = datasets.reduce((sum, data) => sum + data.length, 0);
-    const result: RosterRecord[] = new Array<RosterRecord>(totalRows);
+    const result: ScheduleRecord[] = new Array<ScheduleRecord>(totalRows);
 
     // Concatenate all datasets efficiently
     let offset = 0;
@@ -156,16 +158,16 @@ export async function loadRosters(
       offset += data.length;
     }
 
-    getLogger().info(`Loaded ${result.length} roster records`);
+    getLogger().info(`Loaded ${result.length} schedule records`);
 
     return Ok(result);
   } catch (error) {
-    getLogger().error('Failed to load rosters', error);
+    getLogger().error('Failed to load schedules', error);
     if (error instanceof Error) {
       // Convert to appropriate error type
       if (error.message.includes('fetch') || error.message.includes('network')) {
         return Err(
-          new NetworkError('Network error loading roster data', {
+          new NetworkError('Network error loading schedule data', {
             originalError: error.message,
           })
         );

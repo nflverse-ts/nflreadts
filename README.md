@@ -63,6 +63,10 @@ npm install @nflverse/nflreadts
 
 ## Usage
 
+### Basic Usage
+
+All data loading functions return a `Result<T, Error>` type for safe, functional error handling:
+
 ```typescript
 import {
   loadPbp,
@@ -70,44 +74,155 @@ import {
   loadParticipation,
   loadRosters,
   loadPlayers,
-  loadDepthCharts
+  loadDepthCharts,
+  loadSchedules,
+  loadTeams
 } from '@nflverse/nflreadts';
 
 // Load play-by-play data for 2023 season
-const plays = await loadPbp(2023);
-console.log(`Loaded ${plays.length} plays`);
+const pbpResult = await loadPbp(2023);
+if (pbpResult.ok) {
+  console.log(`Loaded ${pbpResult.value.length} plays`);
+} else {
+  console.error('Failed to load PBP data:', pbpResult.error);
+}
 
-// Load player stats with weekly breakdown
-const weeklyStats = await loadPlayerStats(2023, { summaryLevel: 'week' });
+// Load schedules
+const schedResult = await loadSchedules(2023);
+if (schedResult.ok) {
+  console.log(`Loaded ${schedResult.value.length} games`);
+}
 
-// Load player stats aggregated for regular season
-const regStats = await loadPlayerStats(2023, { summaryLevel: 'reg' });
-
-// Load participation/snap count data (2016+)
-const participation = await loadParticipation(2023);
+// Load teams
+const teamsResult = await loadTeams();
+if (teamsResult.ok) {
+  console.log(`Loaded ${teamsResult.value.length} teams`);
+}
 
 // Load season rosters (1920+)
-const rosters = await loadRosters(2023);
-console.log(`Loaded ${rosters.length} roster entries`);
+const rostersResult = await loadRosters(2023);
+if (rostersResult.ok) {
+  console.log(`Loaded ${rostersResult.value.length} roster entries`);
+}
 
 // Load all-time player database
-const players = await loadPlayers();
-console.log(`Loaded ${players.length} players`);
+const playersResult = await loadPlayers();
+if (playersResult.ok) {
+  console.log(`Loaded ${playersResult.value.length} players`);
+}
 
 // Load weekly depth charts (2001+)
-const depthCharts = await loadDepthCharts(2023);
+const depthResult = await loadDepthCharts(2023);
+if (depthResult.ok) {
+  console.log(`Loaded ${depthResult.value.length} depth chart entries`);
+}
+```
 
+### Advanced Error Handling
+
+```typescript
+import { loadRosters, unwrap, unwrapOr, isOk } from '@nflverse/nflreadts';
+
+// Using unwrap (throws if error)
+const rosters = unwrap(await loadRosters(2023));
+
+// Using unwrapOr (provides default value)
+const rosters = unwrapOr(await loadRosters(2023), []);
+
+// Using type guards
+const result = await loadRosters(2023);
+if (isOk(result)) {
+  // TypeScript knows result.value is available
+  console.log(result.value.length);
+}
+```
+
+### Multiple Seasons and Formats
+
+```typescript
 // Load multiple seasons in parallel
-const multiSeasonPbp = await loadPbp([2022, 2023]);
-const multiSeasonRosters = await loadRosters([2022, 2023]);
+const multiSeasonResult = await loadRosters([2022, 2023]);
+if (multiSeasonResult.ok) {
+  console.log(`Loaded ${multiSeasonResult.value.length} total roster entries`);
+}
 
 // Load all available seasons
-const allPbp = await loadPbp(true);
+const allPbpResult = await loadPbp(true);
 
 // Use Parquet format for better performance
-const parquetPbp = await loadPbp(2023, { format: 'parquet' });
-const parquetRosters = await loadRosters(2023, { format: 'parquet' });
+const parquetResult = await loadRosters(2023, { format: 'parquet' });
 ```
+
+### Player Stats and Participation
+
+```typescript
+// Load player stats with weekly breakdown
+const weeklyStatsResult = await loadPlayerStats(2023, { summaryLevel: 'week' });
+
+// Load player stats aggregated for regular season
+const regStatsResult = await loadPlayerStats(2023, { summaryLevel: 'reg' });
+
+// Load participation/snap count data (2016+)
+const participationResult = await loadParticipation(2023);
+```
+
+### Input Validation
+
+nflreadts provides comprehensive input validation to catch errors early and provide clear feedback:
+
+```typescript
+import {
+  validateSeason,
+  validateWeek,
+  validateTeam,
+  validateSeasons,
+  assertValidSeason,
+} from '@nflverse/nflreadts';
+
+// Validate with type coercion (accepts strings or numbers)
+const seasonResult = validateSeason('2023', { coerce: true });
+if (seasonResult.valid) {
+  console.log(`Season ${seasonResult.value} is valid`);
+} else {
+  console.error(seasonResult.error?.message);
+  // "Invalid season: 1990. Must be between 1999 and 2025"
+}
+
+// Validate week by season type
+const weekResult = validateWeek(19, { seasonType: 'POST' });  // Playoffs
+if (weekResult.valid) {
+  console.log(`Week ${weekResult.value} is valid for POST season`);
+}
+
+// Validate and normalize team abbreviations
+const teamResult = validateTeam('kc', { normalize: true });
+// teamResult.value === 'KC'
+
+// Validate multiple values at once
+const seasonsResult = validateSeasons(['2020', '2021', '2022'], { coerce: true });
+if (seasonsResult.valid) {
+  await loadSchedules(seasonsResult.value);
+}
+
+// Assert validation (throws on invalid input)
+try {
+  assertValidSeason(1990);  // Throws ValidationError
+} catch (error) {
+  console.error(error.message);
+  console.error(error.context); // { season: 1990, minSeason: 1999, maxSeason: 2025 }
+}
+```
+
+**Validation Rules:**
+- **Seasons**: Must be 1999-present (+1 for scheduling)
+- **Weeks**:
+  - Regular season (REG): 1-18
+  - Postseason (POST): 19-22
+  - Preseason (PRE): 1-4
+- **Teams**: Must be valid current or historical NFL team abbreviations
+- **Formats**: Must be one of: csv, parquet, json, rds
+
+All data loaders automatically validate inputs before making API calls. For detailed validation documentation, see the [Validation Guide](docs/VALIDATION.md).
 
 For more examples and detailed documentation, see the [API documentation](docs/) (coming soon).
 

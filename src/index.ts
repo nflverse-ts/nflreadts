@@ -214,3 +214,35 @@ export { sanitizeArray, sanitizeNumber, sanitizeString } from './validation/inde
 
 // Normalization utilities
 export { normalizeTeamAbbr } from './validation/index.js';
+
+// ============================================================================
+// DATETIME - Season and week utilities
+// ============================================================================
+
+export {
+  addDays,
+  daysBetween,
+  formatDate,
+  formatDateLong,
+  formatDateShort,
+  generateSeasonRange,
+  generateWeekRange,
+  getCurrentSeason,
+  getCurrentWeek,
+  getSeasonEndDate,
+  getSeasonFlipDate,
+  getSeasonFromDate,
+  getSeasonStartDate,
+  getToday,
+  getWeeksForSeasonType,
+  isDateInSeason,
+  isFutureDate,
+  isPastDate,
+  parseDate,
+} from './utils/datetime.js';
+
+/**
+ * Alias for {@link getCurrentSeason}, matching nflreadr's most_recent_season().
+ * The season flips to the new year on the Wednesday after Labor Day.
+ */
+export { getCurrentSeason as mostRecentSeason } from './utils/datetime.js';

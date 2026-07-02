@@ -7,14 +7,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as configManager from '../../src/config/manager.js';
 import {
   addQueryParams,
+  buildCombineUrl,
   buildContractsUrl,
   buildDepthChartsUrl,
   buildDraftPicksUrl,
+  buildFtnChartingUrl,
   buildInjuriesUrl,
   buildNextGenStatsUrl,
   buildNflverseUrl,
+  buildOfficialsUrl,
   buildParticipationUrl,
   buildPbpUrl,
+  buildPfrAdvstatsUrl,
   buildPlayerStatsUrl,
   buildPlayersUrl,
   buildQueryString,
@@ -23,6 +27,7 @@ import {
   buildSnapCountsUrl,
   buildTeamStatsUrl,
   buildTeamsUrl,
+  buildTradesUrl,
   buildWeeklyRosterUrl,
   getFilenameFromUrl,
   isNflverseUrl,
@@ -189,28 +194,72 @@ describe('URL Utilities', () => {
   });
 
   describe('buildDraftPicksUrl', () => {
-    it('should build draft picks URL', () => {
-      const url = buildDraftPicksUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/draft_picks/draft_picks_2024.csv`);
+    it('should build the all-seasons draft picks URL', () => {
+      const url = buildDraftPicksUrl();
+      expect(url).toBe(`${mockBaseUrl}/draft_picks/draft_picks.csv`);
+    });
+  });
+
+  describe('buildCombineUrl', () => {
+    it('should build the all-seasons combine URL', () => {
+      const url = buildCombineUrl();
+      expect(url).toBe(`${mockBaseUrl}/combine/combine.csv`);
     });
   });
 
   describe('buildContractsUrl', () => {
-    it('should build contracts URL without season', () => {
+    it('should build the historical contracts URL', () => {
       const url = buildContractsUrl();
-      expect(url).toBe(`${mockBaseUrl}/contracts/contracts.csv`);
+      expect(url).toBe(`${mockBaseUrl}/contracts/historical_contracts.csv`);
+    });
+  });
+
+  describe('buildOfficialsUrl', () => {
+    it('should build the officials URL', () => {
+      const url = buildOfficialsUrl();
+      expect(url).toBe(`${mockBaseUrl}/officials/officials.csv`);
+    });
+  });
+
+  describe('buildTradesUrl', () => {
+    it('should build the trades URL', () => {
+      const url = buildTradesUrl();
+      expect(url).toBe(`${mockBaseUrl}/trades/trades.csv`);
+    });
+  });
+
+  describe('buildFtnChartingUrl', () => {
+    it('should build FTN charting URL', () => {
+      const url = buildFtnChartingUrl(2023);
+      expect(url).toBe(`${mockBaseUrl}/ftn_charting/ftn_charting_2023.csv`);
     });
   });
 
   describe('buildNextGenStatsUrl', () => {
-    it('should build Next Gen Stats URL', () => {
-      const url = buildNextGenStatsUrl(2024, 'passing');
-      expect(url).toBe(`${mockBaseUrl}/nextgen_stats/ngs_passing_2024.csv`);
+    it('should build the all-seasons Next Gen Stats URL per stat type', () => {
+      const url = buildNextGenStatsUrl('passing');
+      expect(url).toBe(`${mockBaseUrl}/nextgen_stats/ngs_passing.csv`);
     });
 
-    it('should handle different stat types', () => {
-      const url = buildNextGenStatsUrl(2024, 'rushing', 'parquet');
-      expect(url).toBe(`${mockBaseUrl}/nextgen_stats/ngs_rushing_2024.parquet`);
+    it('should handle different stat types and formats', () => {
+      const url = buildNextGenStatsUrl('rushing', 'parquet');
+      expect(url).toBe(`${mockBaseUrl}/nextgen_stats/ngs_rushing.parquet`);
+    });
+  });
+
+  describe('buildPfrAdvstatsUrl', () => {
+    it('should build week-level URLs per season', () => {
+      const url = buildPfrAdvstatsUrl('pass', 'week', 2023);
+      expect(url).toBe(`${mockBaseUrl}/pfr_advstats/advstats_week_pass_2023.csv`);
+    });
+
+    it('should build the single season-level file per stat type', () => {
+      const url = buildPfrAdvstatsUrl('def', 'season');
+      expect(url).toBe(`${mockBaseUrl}/pfr_advstats/advstats_season_def.csv`);
+    });
+
+    it('should throw when week level is missing a season', () => {
+      expect(() => buildPfrAdvstatsUrl('rec', 'week')).toThrow('season is required');
     });
   });
 

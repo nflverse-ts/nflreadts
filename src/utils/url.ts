@@ -291,22 +291,43 @@ export function buildInjuriesUrl(season: Season, format: FileFormat = 'csv'): st
 /**
  * Build URL for draft picks
  *
- * @param season - NFL season year
+ * All draft history lives in a single file; loaders filter to requested
+ * seasons after download.
+ *
  * @param format - File format (csv, parquet, rds, json)
  * @returns URL to the draft picks data file
  *
  * @example
  * ```typescript
- * buildDraftPicksUrl(2023);
- * // Returns URL for 2023 draft picks
+ * buildDraftPicksUrl();
+ * // Returns: '.../draft_picks/draft_picks.csv'
  * ```
  */
-export function buildDraftPicksUrl(season: Season, format: FileFormat = 'csv'): string {
-  return buildNflverseUrl('draft_picks', `draft_picks_${season}`, format);
+export function buildDraftPicksUrl(format: FileFormat = 'csv'): string {
+  return buildNflverseUrl('draft_picks', 'draft_picks', format);
 }
 
 /**
- * Build URL for contracts
+ * Build URL for combine results
+ *
+ * All combine history lives in a single file; loaders filter to requested
+ * seasons after download.
+ *
+ * @param format - File format (csv, parquet, rds, json)
+ * @returns URL to the combine data file
+ *
+ * @example
+ * ```typescript
+ * buildCombineUrl();
+ * // Returns: '.../combine/combine.csv'
+ * ```
+ */
+export function buildCombineUrl(format: FileFormat = 'csv'): string {
+  return buildNflverseUrl('combine', 'combine', format);
+}
+
+/**
+ * Build URL for contracts (OverTheCap historical contracts)
  *
  * @param format - File format (csv, parquet, rds, json)
  * @returns URL to the contracts data file
@@ -314,33 +335,117 @@ export function buildDraftPicksUrl(season: Season, format: FileFormat = 'csv'): 
  * @example
  * ```typescript
  * buildContractsUrl();
- * // Returns URL for contracts data
+ * // Returns: '.../contracts/historical_contracts.csv'
  * ```
  */
 export function buildContractsUrl(format: FileFormat = 'csv'): string {
-  return buildNflverseUrl('contracts', 'contracts', format);
+  return buildNflverseUrl('contracts', 'historical_contracts', format);
 }
+
+/**
+ * Build URL for game officials
+ *
+ * All seasons live in a single file; loaders filter after download.
+ *
+ * @param format - File format (csv, parquet, rds, json)
+ * @returns URL to the officials data file
+ */
+export function buildOfficialsUrl(format: FileFormat = 'csv'): string {
+  return buildNflverseUrl('officials', 'officials', format);
+}
+
+/**
+ * Build URL for trades
+ *
+ * All seasons live in a single file; loaders filter after download.
+ *
+ * @param format - File format (csv, parquet, rds, json)
+ * @returns URL to the trades data file
+ */
+export function buildTradesUrl(format: FileFormat = 'csv'): string {
+  return buildNflverseUrl('trades', 'trades', format);
+}
+
+/**
+ * Build URL for FTN charting data
+ *
+ * @param season - NFL season year (2022+)
+ * @param format - File format (csv, parquet, rds, json)
+ * @returns URL to the FTN charting data file
+ */
+export function buildFtnChartingUrl(season: Season, format: FileFormat = 'csv'): string {
+  return buildNflverseUrl('ftn_charting', `ftn_charting_${season}`, format);
+}
+
+/**
+ * Next Gen Stats categories
+ */
+export type NgsStatType = 'passing' | 'receiving' | 'rushing';
 
 /**
  * Build URL for Next Gen Stats
  *
- * @param season - NFL season year
- * @param statType - Type of Next Gen stat (e.g., 'passing', 'rushing', 'receiving')
+ * Each stat type is a single file covering all seasons (2016+); loaders
+ * filter to requested seasons after download.
+ *
+ * @param statType - Type of Next Gen stat ('passing', 'receiving', 'rushing')
  * @param format - File format (csv, parquet, rds, json)
  * @returns URL to the Next Gen Stats data file
  *
  * @example
  * ```typescript
- * buildNextGenStatsUrl(2023, 'passing');
- * // Returns URL for 2023 Next Gen passing stats
+ * buildNextGenStatsUrl('passing');
+ * // Returns: '.../nextgen_stats/ngs_passing.csv'
  * ```
  */
-export function buildNextGenStatsUrl(
-  season: Season,
-  statType: string,
+export function buildNextGenStatsUrl(statType: NgsStatType, format: FileFormat = 'csv'): string {
+  return buildNflverseUrl('nextgen_stats', `ngs_${statType}`, format);
+}
+
+/**
+ * PFR advanced stats categories
+ */
+export type PfrStatType = 'pass' | 'rush' | 'rec' | 'def';
+
+/**
+ * PFR advanced stats summary levels
+ */
+export type PfrSummaryLevel = 'week' | 'season';
+
+/**
+ * Build URL for Pro Football Reference advanced stats
+ *
+ * Week-level data is one file per stat type per season; season-level data is
+ * a single all-seasons file per stat type.
+ *
+ * @param statType - Stat category ('pass', 'rush', 'rec', 'def')
+ * @param summaryLevel - 'week' (per-season files) or 'season' (single file)
+ * @param season - NFL season year (required for 'week' level)
+ * @param format - File format (csv, parquet, rds, json)
+ * @returns URL to the PFR advanced stats data file
+ *
+ * @example
+ * ```typescript
+ * buildPfrAdvstatsUrl('pass', 'week', 2023);
+ * // Returns: '.../pfr_advstats/advstats_week_pass_2023.csv'
+ *
+ * buildPfrAdvstatsUrl('def', 'season');
+ * // Returns: '.../pfr_advstats/advstats_season_def.csv'
+ * ```
+ */
+export function buildPfrAdvstatsUrl(
+  statType: PfrStatType,
+  summaryLevel: PfrSummaryLevel,
+  season?: Season,
   format: FileFormat = 'csv'
 ): string {
-  return buildNflverseUrl('nextgen_stats', `ngs_${statType}_${season}`, format);
+  if (summaryLevel === 'week') {
+    if (season === undefined) {
+      throw new Error('season is required for week-level PFR advanced stats');
+    }
+    return buildNflverseUrl('pfr_advstats', `advstats_week_${statType}_${season}`, format);
+  }
+  return buildNflverseUrl('pfr_advstats', `advstats_season_${statType}`, format);
 }
 
 /**

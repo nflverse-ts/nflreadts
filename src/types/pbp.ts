@@ -266,6 +266,6 @@ export type PlayByPlayData = PlayByPlayRecord[];
  * Options for loading play-by-play data
  */
 export interface LoadPbpOptions {
-  /** File format to load (csv or parquet) */
+  /** File format to load. Defaults to 'parquet'; pass 'csv' if you need it. */
   format?: 'csv' | 'parquet';
 }

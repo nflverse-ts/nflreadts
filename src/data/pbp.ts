@@ -49,8 +49,8 @@ const getLogger = () => logger ?? (logger = createLogger('loadPbp'));
  * // Load all available data
  * const pbpAll = await loadPbp(true);
  *
- * // Load with parquet format (faster, smaller file size)
- * const pbpParquet = await loadPbp(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const pbpCsv = await loadPbp(2023, { format: 'csv' });
  * ```
  *
  * @see {@link https://nflreadr.nflverse.com/reference/load_pbp.html | nflreadr::load_pbp}
@@ -60,7 +60,7 @@ export async function loadPbp(
   seasons?: Season | Season[] | true,
   options: LoadPbpOptions = {}
 ): Promise<Result<PlayByPlayData, Error>> {
-  const { format = 'csv' } = options;
+  const { format = 'parquet' } = options;
 
   try {
     // Determine which seasons to load

@@ -66,8 +66,8 @@ const getLogger = () => logger ?? (logger = createLogger('schedules'));
  * // Load all available seasons
  * const allResult = await loadSchedules(true);
  *
- * // Use Parquet format for better performance
- * const parquetResult = await loadSchedules(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const csvResult = await loadSchedules(2023, { format: 'csv' });
  * ```
  *
  * @see https://nflreadr.nflverse.com/reference/load_schedules.html
@@ -76,7 +76,7 @@ export async function loadSchedules(
   seasons?: Season | Season[] | true,
   options: LoadSchedulesOptions = {}
 ): Promise<Result<ScheduleRecord[], Error>> {
-  const { format = 'csv', ...loadOptions } = options;
+  const { format = 'parquet', ...loadOptions } = options;
 
   try {
     // Validate format parameter

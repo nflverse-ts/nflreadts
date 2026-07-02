@@ -20,10 +20,17 @@ let logger: Logger | undefined;
 const getLogger = () => logger ?? (logger = createLogger('depth-charts'));
 
 /**
- * Load NFL weekly depth charts
+ * Load NFL depth charts
  *
- * Returns weekly depth chart information showing position rankings (starters, backups, etc.)
- * for all teams. Depth charts are published weekly during the season.
+ * Returns depth chart information showing position rankings (starters, backups, etc.)
+ * for all teams. The underlying data has two structures depending on season:
+ *
+ * - **2025 and later**: date-level snapshots sourced from ESPN (including preseason),
+ *   keyed by a `dt` timestamp rather than a week number
+ * - **2001 through 2024**: legacy weekly team-submitted depth charts, keyed by
+ *   `season`/`week`
+ *
+ * Records from the two eras have different columns; narrow with `'dt' in record`.
  *
  * Data is available from 2001 to the current season.
  *
@@ -32,29 +39,31 @@ const getLogger = () => logger ?? (logger = createLogger('depth-charts'));
  *   - Array of seasons (e.g., [2022, 2023])
  *   - `true` to load all available seasons (2001-present)
  *   - Undefined to load current season
- * @param options - Load options including format preference
+ * @param options - Load options including format preference (parquet by default)
  * @returns Result containing array of depth chart records or an error
  *
  * @example
  * ```typescript
- * // Load current season depth charts
+ * // Load current season depth charts (2025+: date-level ESPN snapshots)
  * const result = await loadDepthCharts();
  * if (result.ok) {
  *   const charts = result.value;
  *   console.log(`Loaded ${charts.length} depth chart entries`);
  *
- *   // Find starters for a specific team and week
- *   const kcStarters = charts.filter(d =>
- *     d.team === 'KC' && d.week === 1 && d.pos_rank === 1
+ *   // Find starters for a specific team (date-level records)
+ *   const kcStarters = charts.filter(
+ *     (d) => 'dt' in d && d.team === 'KC' && d.pos_rank === 1
  *   );
  * } else {
  *   console.error('Error loading depth charts:', result.error);
  * }
  *
- * // Load specific season
+ * // Load a legacy season (2001-2024: weekly records)
  * const result2023 = await loadDepthCharts(2023);
  * if (result2023.ok) {
- *   // Process depth charts...
+ *   const week1Starters = result2023.value.filter(
+ *     (d) => 'week' in d && d.week === 1 && d.depth_team === 1
+ *   );
  * }
  *
  * // Load multiple seasons
@@ -70,7 +79,7 @@ export async function loadDepthCharts(
   seasons?: Season | Season[] | true,
   options: LoadDepthChartsOptions = {}
 ): Promise<Result<DepthChartRecord[], Error>> {
-  const { format = 'csv', ...loadOptions } = options;
+  const { format = 'parquet', ...loadOptions } = options;
 
   try {
     const config = getConfig();

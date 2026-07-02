@@ -15,6 +15,14 @@ vi.mock('../../src/client/client.js', () => ({
   })),
 }));
 
+const csvResponse = (data: string) => ({
+  data,
+  status: 200,
+  headers: { 'content-type': 'text/csv' },
+  fromCache: false,
+  url: 'test-url',
+});
+
 describe('loadPlayers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -23,17 +31,11 @@ describe('loadPlayers', () => {
 
   describe('basic loading', () => {
     it('should load player data successfully', async () => {
-      const mockResponse = {
-        data: 'gsis_id,display_name,position\n00-0033873,Patrick Mahomes,QB',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(
+        csvResponse('gsis_id,display_name,position\n00-0033873,Patrick Mahomes,QB')
+      );
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadPlayers();
+      const result = await loadPlayers({ format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
@@ -44,17 +46,9 @@ describe('loadPlayers', () => {
     });
 
     it('should return empty array for empty dataset', async () => {
-      const mockResponse = {
-        data: 'gsis_id,display_name,position\n',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(csvResponse('gsis_id,display_name,position\n'));
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadPlayers();
+      const result = await loadPlayers({ format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
@@ -63,60 +57,48 @@ describe('loadPlayers', () => {
   });
 
   describe('format options', () => {
-    it('should use CSV format by default', async () => {
-      const mockResponse = {
-        data: 'gsis_id,display_name\n00-0033873,Patrick Mahomes',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      await loadPlayers();
-
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));
-    });
-
-    it('should use Parquet format when specified', async () => {
-      const mockResponse = {
+    it('should use Parquet format by default', async () => {
+      mockGet.mockResolvedValue({
         data: new ArrayBuffer(0),
         status: 200,
         headers: { 'content-type': 'application/octet-stream' },
         fromCache: false,
         url: 'test-url',
-      };
+      });
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      // This will fail parsing empty buffer, but we're testing URL construction
-      try {
-        await loadPlayers({ format: 'parquet' });
-      } catch (error) {
-        // Expected to fail due to empty buffer
-      }
+      // Parsing the empty buffer fails, but we're testing URL construction
+      await loadPlayers();
 
       expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'), expect.any(Object));
+    });
+
+    it('should use CSV format when specified', async () => {
+      mockGet.mockResolvedValue(csvResponse('gsis_id,display_name\n00-0033873,Patrick Mahomes'));
+
+      await loadPlayers({ format: 'csv' });
+
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));
     });
   });
 
   describe('data structure', () => {
     it('should return properly typed player records', async () => {
-      const mockCsvData = `gsis_id,espn_id,pff_id,pfr_id,display_name,first_name,last_name,position,position_group,draft_year,draft_round,draft_pick,college,high_school,height,weight,birth_date
-00-0033873,3139477,12345,MahoPa00,Patrick Mahomes,Patrick,Mahomes,QB,QB,2017,1,10,Texas Tech,Whitehouse HS,74,230,1995-09-17`;
+      const header =
+        'gsis_id,display_name,common_first_name,first_name,last_name,short_name,football_name,suffix,' +
+        'esb_id,nfl_id,pfr_id,pff_id,otc_id,espn_id,smart_id,birth_date,position_group,position,' +
+        'ngs_position_group,ngs_position,height,weight,headshot,college_name,college_conference,' +
+        'jersey_number,rookie_season,last_season,latest_team,status,ngs_status,' +
+        'ngs_status_short_description,years_of_experience,pff_position,pff_status,' +
+        'draft_year,draft_round,draft_pick,draft_team';
+      const row =
+        '00-0033873,Patrick Mahomes,Patrick,Patrick,Mahomes,P.Mahomes,Patrick,,' +
+        'MAH473116,43290,MahoPa00,11765,2325,3139477,32004d41-4847-3116-b5e9-7e4d37c4b418,' +
+        '1995-09-17,QB,QB,QB,QB,74,225,https://example.com/mahomes.png,Texas Tech,Big 12 Conference,' +
+        '15,2017,2026,KC,ACT,ACT,Active,10,QB,A,2017,1,10,KC';
 
-      const mockResponse = {
-        data: mockCsvData,
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(csvResponse(`${header}\n${row}`));
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadPlayers();
+      const result = await loadPlayers({ format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
@@ -125,11 +107,19 @@ describe('loadPlayers', () => {
       const player = result.value[0];
       expect(player.gsis_id).toBe('00-0033873');
       expect(player.display_name).toBe('Patrick Mahomes');
+      expect(player.common_first_name).toBe('Patrick');
       expect(player.position).toBe('QB');
+      expect(player.espn_id).toBe(3139477);
+      expect(player.nfl_id).toBe(43290);
+      expect(player.college_name).toBe('Texas Tech');
+      expect(player.college_conference).toBe('Big 12 Conference');
+      expect(player.rookie_season).toBe(2017);
+      expect(player.latest_team).toBe('KC');
+      expect(player.years_of_experience).toBe(10);
       expect(player.draft_year).toBe(2017);
       expect(player.draft_round).toBe(1);
       expect(player.draft_pick).toBe(10);
-      expect(player.college).toBe('Texas Tech');
+      expect(player.draft_team).toBe('KC');
     });
 
     it('should handle multiple players', async () => {
@@ -138,17 +128,9 @@ describe('loadPlayers', () => {
 00-0036212,Josh Allen,QB
 00-0036945,Lamar Jackson,QB`;
 
-      const mockResponse = {
-        data: mockCsvData,
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(csvResponse(mockCsvData));
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadPlayers();
+      const result = await loadPlayers({ format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
@@ -159,44 +141,28 @@ describe('loadPlayers', () => {
     });
 
     it('should handle null values correctly', async () => {
-      const mockCsvData = `gsis_id,display_name,college,draft_year
+      const mockCsvData = `gsis_id,display_name,college_name,draft_year
 00-0033873,Patrick Mahomes,,`;
 
-      const mockResponse = {
-        data: mockCsvData,
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(csvResponse(mockCsvData));
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadPlayers();
+      const result = await loadPlayers({ format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value).toHaveLength(1);
       const player = result.value[0];
-      expect(player.college).toBeNull();
+      expect(player.college_name).toBeNull();
       expect(player.draft_year).toBeNull();
     });
   });
 
   describe('options', () => {
     it('should pass signal for cancellation', async () => {
-      const mockResponse = {
-        data: 'gsis_id,display_name\n00-0033873,Patrick Mahomes',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+      mockGet.mockResolvedValue(csvResponse('gsis_id,display_name\n00-0033873,Patrick Mahomes'));
 
       const controller = new AbortController();
-      await loadPlayers({ signal: controller.signal });
+      await loadPlayers({ format: 'csv', signal: controller.signal });
 
       expect(mockGet).toHaveBeenCalledWith(
         expect.any(String),

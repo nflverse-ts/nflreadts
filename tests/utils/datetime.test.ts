@@ -83,28 +83,35 @@ describe('DateTime Utilities', () => {
   });
 
   describe('getSeasonFromDate', () => {
-    it('should return current year for September-December', () => {
-      const septDate = new Date(2024, 8, 1); // September 1, 2024
-      expect(getSeasonFromDate(septDate)).toBe(2024);
+    it('should return current year from the Wednesday after Labor Day onward', () => {
+      // Labor Day 2024 = Monday Sept 2, so the flip is Wednesday Sept 4
+      const flipDay = new Date(2024, 8, 4);
+      expect(getSeasonFromDate(flipDay)).toBe(2024);
 
       const decDate = new Date(2024, 11, 31); // December 31, 2024
       expect(getSeasonFromDate(decDate)).toBe(2024);
     });
 
-    it('should return previous year for January-August', () => {
+    it('should return previous year before the flip', () => {
       const janDate = new Date(2024, 0, 1); // January 1, 2024
       expect(getSeasonFromDate(janDate)).toBe(2023);
 
       const augDate = new Date(2024, 7, 31); // August 31, 2024
       expect(getSeasonFromDate(augDate)).toBe(2023);
+
+      // September 1-3, 2024 are still before the Wednesday after Labor Day
+      expect(getSeasonFromDate(new Date(2024, 8, 1))).toBe(2023);
+      expect(getSeasonFromDate(new Date(2024, 8, 3))).toBe(2023);
     });
 
-    it('should handle boundary dates correctly', () => {
-      const endAug = new Date(2024, 7, 31); // August 31
-      expect(getSeasonFromDate(endAug)).toBe(2023);
+    it('should compute the flip per year', () => {
+      // Labor Day 2026 = Monday Sept 7, so the flip is Wednesday Sept 9
+      expect(getSeasonFromDate(new Date(2026, 8, 8))).toBe(2025);
+      expect(getSeasonFromDate(new Date(2026, 8, 9))).toBe(2026);
 
-      const startSept = new Date(2024, 8, 1); // September 1
-      expect(getSeasonFromDate(startSept)).toBe(2024);
+      // Labor Day 2025 = Monday Sept 1, so the flip is Wednesday Sept 3
+      expect(getSeasonFromDate(new Date(2025, 8, 2))).toBe(2024);
+      expect(getSeasonFromDate(new Date(2025, 8, 3))).toBe(2025);
     });
   });
 

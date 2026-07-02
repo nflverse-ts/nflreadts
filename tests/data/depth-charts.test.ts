@@ -6,6 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadDepthCharts } from '../../src/data/depth-charts.js';
+import type { DepthChartDatedRecord, DepthChartWeeklyRecord } from '../../src/types/depth-chart.js';
 import { ValidationError } from '../../src/types/error.js';
 
 // Mock the HttpClient
@@ -23,58 +24,98 @@ vi.mock('../../src/utils/datetime.js', async () => {
   );
   return {
     ...actual,
-    getCurrentSeason: vi.fn(() => 2024),
+    getCurrentSeason: vi.fn(() => 2025),
   };
+});
+
+// Mock only parseParquet; parseCsv stays real
+const mockParseParquet = vi.fn();
+vi.mock('../../src/utils/parse.js', async () => {
+  const actual = await vi.importActual<typeof import('../../src/utils/parse.js')>(
+    '../../src/utils/parse.js'
+  );
+  return {
+    ...actual,
+    parseParquet: (...args: unknown[]) => mockParseParquet(...args) as Promise<unknown[]>,
+  };
+});
+
+/** Date-level (2025+) fixture matching the ESPN-sourced schema */
+const datedRecord: DepthChartDatedRecord = {
+  dt: '2025-09-04T07:30:00Z',
+  team: 'KC',
+  player_name: 'Patrick Mahomes',
+  espn_id: 3139477,
+  gsis_id: '00-0033873',
+  pos_grp_id: 15,
+  pos_grp: '3WR 1TE',
+  pos_id: 1,
+  pos_name: 'Quarterback',
+  pos_abb: 'QB',
+  pos_slot: 1,
+  pos_rank: 1,
+};
+
+/** Legacy weekly (2001-2024) CSV header */
+const weeklyCsvHeader =
+  'season,club_code,week,game_type,depth_team,last_name,first_name,football_name,formation,gsis_id,jersey_number,position,elias_id,depth_position,full_name';
+
+const weeklyCsvRow = (season: number, lastName = 'Mahomes', firstName = 'Patrick'): string =>
+  `${season},KC,1,REG,1,${lastName},${firstName},${firstName},Offense,00-0033873,15,QB,MAH473748,QB,${firstName} ${lastName}`;
+
+const csvResponse = (data: string) => ({
+  data,
+  status: 200,
+  headers: { 'content-type': 'text/csv' },
+  fromCache: false,
+  url: 'test-url',
+});
+
+const parquetResponse = () => ({
+  data: new ArrayBuffer(8),
+  status: 200,
+  headers: { 'content-type': 'application/octet-stream' },
+  fromCache: false,
+  url: 'test-url',
 });
 
 describe('loadDepthCharts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGet.mockClear();
+    mockParseParquet.mockResolvedValue([datedRecord]);
   });
 
   describe('season normalization', () => {
-    it('should load current season when no seasons provided', async () => {
-      const mockResponse = {
-        data: 'dt,team,player_name,pos_rank\n2024-09-05T12:00:00Z,KC,Patrick Mahomes,1',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+    it('should load current season as parquet when no arguments provided', async () => {
+      mockGet.mockResolvedValue(parquetResponse());
 
       const result = await loadDepthCharts();
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value).toHaveLength(1);
-      expect(result.value[0].player_name).toBe('Patrick Mahomes');
+      const entry = result.value[0] as DepthChartDatedRecord;
+      expect(entry.player_name).toBe('Patrick Mahomes');
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('depth_charts_2024.csv'),
+        expect.stringContaining('depth_charts_2025.parquet'),
         expect.any(Object)
       );
     });
 
     it('should load specific season', async () => {
-      const mockResponse = {
-        data: 'dt,team,player_name,pos_rank\n2023-09-07T12:00:00Z,BUF,Josh Allen,1',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(
+        csvResponse(`${weeklyCsvHeader}\n${weeklyCsvRow(2023, 'Allen', 'Josh')}`)
+      );
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadDepthCharts(2023);
+      const result = await loadDepthCharts(2023, { format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value).toHaveLength(1);
-      expect(result.value[0].player_name).toBe('Josh Allen');
+      const entry = result.value[0] as DepthChartWeeklyRecord;
+      expect(entry.full_name).toBe('Josh Allen');
       expect(mockGet).toHaveBeenCalledWith(
         expect.stringContaining('depth_charts_2023.csv'),
         expect.any(Object)
@@ -82,25 +123,13 @@ describe('loadDepthCharts', () => {
     });
 
     it('should load multiple seasons', async () => {
-      const mockResponse2022 = {
-        data: 'dt,team,player_name,pos_rank\n2022-09-08T12:00:00Z,KC,Patrick Mahomes,1',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet
+        .mockResolvedValueOnce(csvResponse(`${weeklyCsvHeader}\n${weeklyCsvRow(2022)}`))
+        .mockResolvedValueOnce(
+          csvResponse(`${weeklyCsvHeader}\n${weeklyCsvRow(2023, 'Allen', 'Josh')}`)
+        );
 
-      const mockResponse2023 = {
-        data: 'dt,team,player_name,pos_rank\n2023-09-07T12:00:00Z,BUF,Josh Allen,1',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValueOnce(mockResponse2022).mockResolvedValueOnce(mockResponse2023);
-
-      const result = await loadDepthCharts([2022, 2023]);
+      const result = await loadDepthCharts([2022, 2023], { format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
@@ -117,26 +146,18 @@ describe('loadDepthCharts', () => {
     });
 
     it('should load all seasons when true is passed', async () => {
-      const mockResponse = {
-        data: 'dt,team,player_name,pos_rank\n2024-09-05T12:00:00Z,KC,Patrick Mahomes,1',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+      mockGet.mockResolvedValue(parquetResponse());
 
       const _result = await loadDepthCharts(true);
 
-      // Should call for many seasons (2001-2024)
+      // Should call for many seasons (2001-2025)
       expect(mockGet.mock.calls.length).toBeGreaterThan(20);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('depth_charts_2001.csv'),
+        expect.stringContaining('depth_charts_2001.parquet'),
         expect.any(Object)
       );
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('depth_charts_2024.csv'),
+        expect.stringContaining('depth_charts_2025.parquet'),
         expect.any(Object)
       );
     });
@@ -152,7 +173,7 @@ describe('loadDepthCharts', () => {
     });
 
     it('should reject future seasons', async () => {
-      const result = await loadDepthCharts(2025);
+      const result = await loadDepthCharts(2026);
       expect(result.ok).toBe(false);
       if (result.ok) return;
       expect(result.error).toBeInstanceOf(ValidationError);
@@ -160,169 +181,138 @@ describe('loadDepthCharts', () => {
     });
 
     it('should reject invalid season in array', async () => {
-      const result = await loadDepthCharts([2023, 2025]);
+      const result = await loadDepthCharts([2023, 2026]);
       expect(result.ok).toBe(false);
       if (result.ok) return;
       expect(result.error).toBeInstanceOf(ValidationError);
     });
 
     it('should accept 2001 (minimum valid season)', async () => {
-      const mockResponse = {
-        data: 'dt,team,player_name,pos_rank\n2001-09-09T12:00:00Z,NE,Tom Brady,1',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(
+        csvResponse(`${weeklyCsvHeader}\n${weeklyCsvRow(2001, 'Brady', 'Tom')}`)
+      );
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadDepthCharts(2001);
+      const result = await loadDepthCharts(2001, { format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value).toHaveLength(1);
-      expect((result.value[0]!.dt as unknown as Date).toISOString()).toBe(
-        '2001-09-09T12:00:00.000Z'
-      );
+      const entry = result.value[0] as DepthChartWeeklyRecord;
+      expect(entry.season).toBe(2001);
+      expect(entry.full_name).toBe('Tom Brady');
     });
 
     it('should accept current season (maximum valid season)', async () => {
-      const mockResponse = {
-        data: 'dt,team,player_name,pos_rank\n2024-09-05T12:00:00Z,KC,Patrick Mahomes,1',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(parquetResponse());
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadDepthCharts(2024);
+      const result = await loadDepthCharts(2025);
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value).toHaveLength(1);
-      expect((result.value[0]!.dt as unknown as Date).toISOString()).toBe(
-        '2024-09-05T12:00:00.000Z'
-      );
+      const entry = result.value[0] as DepthChartDatedRecord;
+      expect(entry.dt).toBe('2025-09-04T07:30:00Z');
     });
   });
 
   describe('format options', () => {
-    it('should use CSV format by default', async () => {
-      const mockResponse = {
-        data: 'dt,team,player_name\n2023-09-07T12:00:00Z,KC,Patrick Mahomes',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+    it('should use Parquet format by default', async () => {
+      mockGet.mockResolvedValue(parquetResponse());
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      await loadDepthCharts(2023);
-
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));
-    });
-
-    it('should use Parquet format when specified', async () => {
-      const mockResponse = {
-        data: new ArrayBuffer(0),
-        status: 200,
-        headers: { 'content-type': 'application/octet-stream' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      try {
-        await loadDepthCharts(2023, { format: 'parquet' });
-      } catch (error) {
-        // Expected to fail due to empty buffer
-      }
+      await loadDepthCharts(2025);
 
       expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'), expect.any(Object));
+      expect(mockParseParquet).toHaveBeenCalledTimes(1);
+    });
+
+    it('should use CSV format when specified', async () => {
+      mockGet.mockResolvedValue(csvResponse(`${weeklyCsvHeader}\n${weeklyCsvRow(2023)}`));
+
+      await loadDepthCharts(2023, { format: 'csv' });
+
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));
+      expect(mockParseParquet).not.toHaveBeenCalled();
     });
   });
 
   describe('data structure', () => {
-    it('should return properly typed depth chart records', async () => {
-      const mockCsvData = `dt,team,player_name,pos_grp,pos_name,pos_abb,pos_rank,gsis_id,espn_id,pos_grp_id,pos_id,pos_slot
-2023-09-07T12:00:00Z,KC,Patrick Mahomes,OFFENSE,Quarterback,QB,1,00-0033873,3139477,OFF,QB,1`;
+    it('should return date-level records for 2025+ seasons', async () => {
+      const mockCsvData = `dt,team,player_name,espn_id,gsis_id,pos_grp_id,pos_grp,pos_id,pos_name,pos_abb,pos_slot,pos_rank
+2025-09-04T07:30:00Z,KC,Patrick Mahomes,3139477,00-0033873,15,3WR 1TE,1,Quarterback,QB,1,1`;
 
-      const mockResponse = {
-        data: mockCsvData,
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(csvResponse(mockCsvData));
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadDepthCharts(2023);
+      const result = await loadDepthCharts(2025, { format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value).toHaveLength(1);
 
-      const entry = result.value[0]!;
+      const entry = result.value[0] as DepthChartDatedRecord;
       // dt is parsed as Date object by CSV parser with dynamicTyping
       expect(entry.dt).toBeInstanceOf(Date);
-      expect((entry.dt as unknown as Date).toISOString()).toBe('2023-09-07T12:00:00.000Z');
+      expect((entry.dt as unknown as Date).toISOString()).toBe('2025-09-04T07:30:00.000Z');
       expect(entry.team).toBe('KC');
       expect(entry.player_name).toBe('Patrick Mahomes');
+      expect(entry.espn_id).toBe(3139477);
+      expect(entry.gsis_id).toBe('00-0033873');
+      expect(entry.pos_grp).toBe('3WR 1TE');
+      expect(entry.pos_abb).toBe('QB');
       expect(entry.pos_rank).toBe(1);
     });
 
-    it('should handle multiple players at different positions', async () => {
-      const mockCsvData = `dt,team,player_name,pos_rank
-2023-09-07T12:00:00Z,KC,Patrick Mahomes,1
-2023-09-07T12:00:00Z,KC,Travis Kelce,1
-2023-09-07T12:00:00Z,KC,Chad Henne,2`;
+    it('should return weekly records for legacy seasons', async () => {
+      mockGet.mockResolvedValue(csvResponse(`${weeklyCsvHeader}\n${weeklyCsvRow(2023)}`));
 
-      const mockResponse = {
-        data: mockCsvData,
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      const result = await loadDepthCharts(2023, { format: 'csv' });
 
-      mockGet.mockResolvedValue(mockResponse);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
 
-      const result = await loadDepthCharts(2023);
+      const entry = result.value[0] as DepthChartWeeklyRecord;
+      expect(entry.season).toBe(2023);
+      expect(entry.club_code).toBe('KC');
+      expect(entry.week).toBe(1);
+      expect(entry.game_type).toBe('REG');
+      expect(entry.depth_team).toBe(1);
+      expect(entry.gsis_id).toBe('00-0033873');
+      expect(entry.position).toBe('QB');
+      expect(entry.depth_position).toBe('QB');
+      expect(entry.full_name).toBe('Patrick Mahomes');
+    });
+
+    it('should handle multiple players at different ranks', async () => {
+      const mockCsvData = `dt,team,player_name,pos_abb,pos_rank
+2025-09-04T07:30:00Z,KC,Patrick Mahomes,QB,1
+2025-09-04T07:30:00Z,KC,Travis Kelce,TE,1
+2025-09-04T07:30:00Z,KC,Gardner Minshew,QB,2`;
+
+      mockGet.mockResolvedValue(csvResponse(mockCsvData));
+
+      const result = await loadDepthCharts(2025, { format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value).toHaveLength(3);
-      expect(result.value[0]!.player_name).toBe('Patrick Mahomes');
-      expect(result.value[1]!.player_name).toBe('Travis Kelce');
-      expect(result.value[2]!.player_name).toBe('Chad Henne');
+      const entries = result.value as DepthChartDatedRecord[];
+      expect(entries[0]!.player_name).toBe('Patrick Mahomes');
+      expect(entries[1]!.player_name).toBe('Travis Kelce');
+      expect(entries[2]!.player_name).toBe('Gardner Minshew');
     });
 
     it('should handle null values correctly', async () => {
       const mockCsvData = `dt,team,player_name,espn_id,gsis_id
-2023-09-07T12:00:00Z,KC,Patrick Mahomes,,`;
+2025-09-04T07:30:00Z,KC,Patrick Mahomes,,`;
 
-      const mockResponse = {
-        data: mockCsvData,
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(csvResponse(mockCsvData));
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadDepthCharts(2023);
+      const result = await loadDepthCharts(2025, { format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value).toHaveLength(1);
-      const entry = result.value[0]!;
+      const entry = result.value[0] as DepthChartDatedRecord;
       expect(entry.espn_id).toBeNull();
       expect(entry.gsis_id).toBeNull();
     });
@@ -330,18 +320,10 @@ describe('loadDepthCharts', () => {
 
   describe('parallel fetching', () => {
     it('should fetch multiple seasons in parallel', async () => {
-      const mockResponse = {
-        data: 'dt,team,player_name\n2023-09-07T12:00:00Z,KC,Patrick Mahomes',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+      mockGet.mockResolvedValue(csvResponse(`${weeklyCsvHeader}\n${weeklyCsvRow(2023)}`));
 
       const startTime = Date.now();
-      await loadDepthCharts([2021, 2022, 2023]);
+      await loadDepthCharts([2021, 2022, 2023], { format: 'csv' });
       const endTime = Date.now();
 
       expect(mockGet).toHaveBeenCalledTimes(3);
@@ -351,53 +333,33 @@ describe('loadDepthCharts', () => {
 
   describe('data concatenation', () => {
     it('should correctly concatenate multiple seasons', async () => {
-      const mockResponse2022 = {
-        data: 'dt,team,player_name\n2022-09-08T12:00:00Z,KC,Patrick Mahomes\n2022-09-08T12:00:00Z,BUF,Josh Allen',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet
+        .mockResolvedValueOnce(
+          csvResponse(
+            `${weeklyCsvHeader}\n${weeklyCsvRow(2022)}\n${weeklyCsvRow(2022, 'Allen', 'Josh')}`
+          )
+        )
+        .mockResolvedValueOnce(
+          csvResponse(
+            `${weeklyCsvHeader}\n${weeklyCsvRow(2023)}\n${weeklyCsvRow(2023, 'Allen', 'Josh')}\n${weeklyCsvRow(2023, 'Purdy', 'Brock')}`
+          )
+        );
 
-      const mockResponse2023 = {
-        data: 'dt,team,player_name\n2023-09-07T12:00:00Z,KC,Patrick Mahomes\n2023-09-07T12:00:00Z,BUF,Josh Allen\n2023-09-07T12:00:00Z,SF,Brock Purdy',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValueOnce(mockResponse2022).mockResolvedValueOnce(mockResponse2023);
-
-      const result = await loadDepthCharts([2022, 2023]);
+      const result = await loadDepthCharts([2022, 2023], { format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.value).toHaveLength(5);
 
-      // Check timestamps to determine which year
-      const dt2022Count = result.value.filter(
-        (r) => (r.dt as unknown as Date).getFullYear() === 2022
-      ).length;
-      const dt2023Count = result.value.filter(
-        (r) => (r.dt as unknown as Date).getFullYear() === 2023
-      ).length;
-      expect(dt2022Count).toBe(2);
-      expect(dt2023Count).toBe(3);
+      const entries = result.value as DepthChartWeeklyRecord[];
+      expect(entries.filter((r) => r.season === 2022)).toHaveLength(2);
+      expect(entries.filter((r) => r.season === 2023)).toHaveLength(3);
     });
 
     it('should handle empty datasets', async () => {
-      const mockResponse = {
-        data: 'dt,team,player_name\n',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
+      mockGet.mockResolvedValue(csvResponse(`${weeklyCsvHeader}\n`));
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadDepthCharts(2023);
+      const result = await loadDepthCharts(2023, { format: 'csv' });
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
@@ -407,18 +369,10 @@ describe('loadDepthCharts', () => {
 
   describe('options', () => {
     it('should pass signal for cancellation', async () => {
-      const mockResponse = {
-        data: 'dt,team,player_name\n2023-09-07T12:00:00Z,KC,Patrick Mahomes',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+      mockGet.mockResolvedValue(parquetResponse());
 
       const controller = new AbortController();
-      await loadDepthCharts(2023, { signal: controller.signal });
+      await loadDepthCharts(2025, { signal: controller.signal });
 
       expect(mockGet).toHaveBeenCalledWith(
         expect.any(String),

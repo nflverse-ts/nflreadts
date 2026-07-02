@@ -17,6 +17,19 @@ vi.mock('../../src/client/client.js', () => ({
   })),
 }));
 
+// Fixtures are CSV strings; route the parquet default path through the real
+// CSV parser so both format branches share the same fixtures.
+vi.mock('../../src/utils/parse.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/utils/parse.js')>();
+  return {
+    ...actual,
+    parseParquet: vi.fn((buffer: ArrayBuffer | string) => {
+      const text = typeof buffer === 'string' ? buffer : new TextDecoder().decode(buffer);
+      return Promise.resolve(actual.parseCsv(text).data);
+    }),
+  };
+});
+
 // Mock the config manager
 vi.mock('../../src/config/manager.js', () => ({
   getConfig: vi.fn(() => ({
@@ -117,27 +130,27 @@ describe('loadRostersWeekly', () => {
   });
 
   describe('format support', () => {
-    it('should load CSV format by default', async () => {
+    it('should load parquet format by default', async () => {
       mockGet.mockResolvedValue(csvResponse('season,team,week\n2023,KC,1'));
 
       const result = await loadRostersWeekly(2023);
 
       expect(result.ok).toBe(true);
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'), expect.any(Object));
     });
 
-    it('should load parquet format when specified', async () => {
+    it('should load CSV format when specified', async () => {
       mockGet.mockResolvedValue({
-        data: new ArrayBuffer(100),
+        data: 'a,b\n1,2',
         status: 200,
         headers: {},
         fromCache: false,
         url: 'test-url',
       });
 
-      await loadRostersWeekly(2023, { format: 'parquet' });
+      await loadRostersWeekly(2023, { format: 'csv' });
 
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'), expect.any(Object));
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));
     });
   });
 
@@ -227,7 +240,7 @@ describe('loadRostersWeekly', () => {
       await loadRostersWeekly(2023);
 
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringMatching(/weekly_rosters\/roster_weekly_2023\.csv$/),
+        expect.stringMatching(/weekly_rosters\/roster_weekly_2023\.parquet$/),
         expect.any(Object)
       );
     });

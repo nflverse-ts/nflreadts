@@ -60,7 +60,7 @@ Current Phase: **Full loader parity with nflreadpy** (24 loaders, live-verified 
 
 **Package features:**
 
-- **Multiple Formats**: CSV and Parquet (some upstream assets are parquet-only; loaders default accordingly)
+- **Multiple Formats**: Parquet by default (matching nflreadpy), CSV on request via `{ format: 'csv' }`
 - **Full TypeScript Support**: typed records derived from the live data schemas
 - **Promise-based API**: modern async/await workflows with Result-typed error handling
 - **Smart Caching**: built-in HTTP caching for improved performance
@@ -164,8 +164,8 @@ if (multiSeasonResult.ok) {
 // Load all available seasons
 const allPbpResult = await loadPbp(true);
 
-// Use Parquet format for better performance
-const parquetResult = await loadRosters(2023, { format: 'parquet' });
+// Parquet is the default; pass 'csv' if you need CSV
+const csvResult = await loadRosters(2023, { format: 'csv' });
 ```
 
 ### Player Stats and Participation

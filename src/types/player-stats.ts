@@ -285,7 +285,7 @@ export type PlayerStatsData = PlayerStatsRecord[];
  * Options for loading player stats data
  */
 export interface LoadPlayerStatsOptions {
-  /** File format to load (csv or parquet) */
+  /** File format to load. Defaults to 'parquet'; pass 'csv' if you need it. */
   format?: 'csv' | 'parquet';
   /**
    * Summary level - selects which pre-aggregated nflverse file is downloaded:

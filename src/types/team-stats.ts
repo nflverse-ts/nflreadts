@@ -251,7 +251,7 @@ export type TeamStatsData = TeamStatsRecord[];
  * Options for loading team stats data
  */
 export interface LoadTeamStatsOptions {
-  /** File format to load (csv or parquet) */
+  /** File format to load. Defaults to 'parquet'; pass 'csv' if you need it. */
   format?: 'csv' | 'parquet';
   /**
    * Summary level - selects which pre-aggregated nflverse file is downloaded:

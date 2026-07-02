@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadCombine } from '../../src/data/combine.js';
 import { DataNotFoundError, ValidationError } from '../../src/types/error.js';
+import { parseCsv } from '../../src/utils/parse.js';
 
 // Use vi.hoisted to declare mocks that will be used in vi.mock
 const { mockGet, mockParseParquet } = vi.hoisted(() => ({
@@ -48,6 +49,12 @@ describe('loadCombine', () => {
     vi.clearAllMocks();
     mockGet.mockClear();
     mockParseParquet.mockClear();
+    // Fixtures are CSV strings; route the parquet default path through the
+    // real CSV parser so both format branches share the same fixtures.
+    mockParseParquet.mockImplementation((buffer: ArrayBuffer | string) => {
+      const text = typeof buffer === 'string' ? buffer : new TextDecoder().decode(buffer);
+      return Promise.resolve(parseCsv(text).data);
+    });
   });
 
   // All combine history lives in a single file; loaders fetch once and filter
@@ -126,17 +133,26 @@ describe('loadCombine', () => {
       await loadCombine();
 
       expect(mockGet).toHaveBeenCalledWith(
-        'https://github.com/nflverse/nflverse-data/releases/download/combine/combine.csv',
+        'https://github.com/nflverse/nflverse-data/releases/download/combine/combine.parquet',
         expect.any(Object)
       );
     });
   });
 
   describe('format options', () => {
-    it('should load CSV format by default', async () => {
+    it('should load parquet format by default', async () => {
       mockGet.mockResolvedValue(allSeasonsResponse);
 
       const result = await loadCombine(2022);
+
+      expect(result.ok).toBe(true);
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'), expect.any(Object));
+    });
+
+    it('should load CSV format when specified', async () => {
+      mockGet.mockResolvedValue(allSeasonsResponse);
+
+      const result = await loadCombine(2022, { format: 'csv' });
 
       expect(result.ok).toBe(true);
       expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));

@@ -58,8 +58,8 @@ const getLogger = () => logger ?? (logger = createLogger('officials'));
  * // Load multiple seasons
  * const multi = await loadOfficials([2022, 2023]);
  *
- * // Use Parquet format for better performance
- * const parquetResult = await loadOfficials(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const csvResult = await loadOfficials(2023, { format: 'csv' });
  * ```
  *
  * @see https://nflreadr.nflverse.com/reference/load_officials.html
@@ -68,7 +68,7 @@ export async function loadOfficials(
   seasons?: Season | Season[] | true,
   options: LoadOfficialsOptions = {}
 ): Promise<Result<OfficialRecord[], Error>> {
-  const { format = 'csv', ...loadOptions } = options;
+  const { format = 'parquet', ...loadOptions } = options;
 
   try {
     assertValidFormat(format);

@@ -6,6 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadTeams } from '../../src/data/teams.js';
+import { parseCsv } from '../../src/utils/parse.js';
 
 // Use vi.hoisted to declare mocks that will be used in vi.mock
 const { mockGet, mockParseParquet } = vi.hoisted(() => ({
@@ -36,6 +37,12 @@ describe('loadTeams', () => {
     vi.clearAllMocks();
     mockGet.mockClear();
     mockParseParquet.mockClear();
+    // Fixtures are CSV strings; route the parquet default path through the
+    // real CSV parser so both format branches share the same fixtures.
+    mockParseParquet.mockImplementation((buffer: ArrayBuffer | string) => {
+      const text = typeof buffer === 'string' ? buffer : new TextDecoder().decode(buffer);
+      return Promise.resolve(parseCsv(text).data);
+    });
   });
 
   describe('basic loading', () => {
@@ -59,7 +66,7 @@ describe('loadTeams', () => {
       expect(result.value[0]?.team_name).toBe('Kansas City Chiefs');
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('teams_colors_logos.csv'),
+        expect.stringContaining('teams_colors_logos.parquet'),
         expect.any(Object)
       );
     });
@@ -85,7 +92,7 @@ describe('loadTeams', () => {
   });
 
   describe('format options', () => {
-    it('should load CSV format by default', async () => {
+    it('should load parquet format by default', async () => {
       const mockResponse = {
         data: 'team_abbr,team_name,team_id,team_nick,team_conf,team_division\nKC,Kansas City Chiefs,2310,Chiefs,AFC,West',
         status: 200,
@@ -97,6 +104,21 @@ describe('loadTeams', () => {
       mockGet.mockResolvedValue(mockResponse);
 
       const result = await loadTeams();
+
+      expect(result.ok).toBe(true);
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'), expect.any(Object));
+    });
+
+    it('should load CSV format when specified', async () => {
+      mockGet.mockResolvedValue({
+        data: 'team_abbr,team_name\nKC,Kansas City Chiefs',
+        status: 200,
+        headers: { 'content-type': 'text/csv' },
+        fromCache: false,
+        url: 'test-url',
+      });
+
+      const result = await loadTeams({ format: 'csv' });
 
       expect(result.ok).toBe(true);
       expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));

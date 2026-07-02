@@ -64,8 +64,8 @@ const getLogger = () => logger ?? (logger = createLogger('rosters'));
  * // Load all seasons (careful - this is a LOT of data!)
  * const allResult = await loadRosters(true);
  *
- * // Use Parquet format for better performance
- * const parquetResult = await loadRosters(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const csvResult = await loadRosters(2023, { format: 'csv' });
  * ```
  *
  * @see https://nflreadr.nflverse.com/reference/load_rosters.html
@@ -74,7 +74,7 @@ export async function loadRosters(
   seasons?: Season | Season[] | true,
   options: LoadRostersOptions = {}
 ): Promise<Result<RosterRecord[], Error>> {
-  const { format = 'csv', ...loadOptions } = options;
+  const { format = 'parquet', ...loadOptions } = options;
 
   try {
     // Validate format parameter

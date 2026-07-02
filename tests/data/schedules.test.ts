@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadSchedules } from '../../src/data/schedules.js';
 import { ValidationError } from '../../src/types/error.js';
+import { parseCsv } from '../../src/utils/parse.js';
 
 // Use vi.hoisted to declare mocks that will be used in vi.mock
 const { mockGet, mockParseParquet } = vi.hoisted(() => ({
@@ -48,6 +49,12 @@ describe('loadSchedules', () => {
     vi.clearAllMocks();
     mockGet.mockClear();
     mockParseParquet.mockClear();
+    // Fixtures are CSV strings; route the parquet default path through the
+    // real CSV parser so both format branches share the same fixtures.
+    mockParseParquet.mockImplementation((buffer: ArrayBuffer | string) => {
+      const text = typeof buffer === 'string' ? buffer : new TextDecoder().decode(buffer);
+      return Promise.resolve(parseCsv(text).data);
+    });
   });
 
   // All seasons live in a single games file; loaders fetch once and filter
@@ -79,7 +86,7 @@ describe('loadSchedules', () => {
       expect(result.value[0]?.season).toBe(2024);
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('games.csv'),
+        expect.stringContaining('games.parquet'),
         expect.any(Object)
       );
     });
@@ -95,7 +102,7 @@ describe('loadSchedules', () => {
       expect(result.value[0]?.game_id).toBe('2023_01_DET_KC');
       expect(result.value[0]?.season).toBe(2023);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('games.csv'),
+        expect.stringContaining('games.parquet'),
         expect.any(Object)
       );
     });
@@ -153,7 +160,7 @@ describe('loadSchedules', () => {
   });
 
   describe('format options', () => {
-    it('should load CSV format by default', async () => {
+    it('should load parquet format by default', async () => {
       const mockResponse = {
         data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2023_01_DET_KC,2023,REG,1,2023-09-07,DET,KC',
         status: 200,
@@ -165,6 +172,21 @@ describe('loadSchedules', () => {
       mockGet.mockResolvedValue(mockResponse);
 
       const result = await loadSchedules(2023);
+
+      expect(result.ok).toBe(true);
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'), expect.any(Object));
+    });
+
+    it('should load CSV format when specified', async () => {
+      mockGet.mockResolvedValue({
+        data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2023_01_DET_KC,2023,REG,1,2023-09-07,DET,KC',
+        status: 200,
+        headers: { 'content-type': 'text/csv' },
+        fromCache: false,
+        url: 'test-url',
+      });
+
+      const result = await loadSchedules(2023, { format: 'csv' });
 
       expect(result.ok).toBe(true);
       expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));

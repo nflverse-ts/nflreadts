@@ -105,6 +105,6 @@ export type WeeklyRosterData = WeeklyRosterRecord[];
  * Options for loading weekly roster data
  */
 export interface LoadRostersWeeklyOptions {
-  /** File format to load (csv or parquet) */
+  /** File format to load. Defaults to 'parquet'; pass 'csv' if you need it. */
   format?: 'csv' | 'parquet';
 }

@@ -80,7 +80,7 @@ export function buildNflverseUrl(
  * // Returns URL for 2023 play-by-play data in parquet format
  * ```
  */
-export function buildPbpUrl(season: Season, format: FileFormat = 'csv'): string {
+export function buildPbpUrl(season: Season, format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('pbp', `play_by_play_${season}`, format);
 }
 
@@ -108,13 +108,13 @@ function statsLevelToken(summaryLevel: StatsSummaryLevel): string {
  * @example
  * ```typescript
  * buildPlayerStatsUrl(2023, 'week');
- * // Returns URL for 2023 weekly player stats in CSV format
+ * // Returns URL for 2023 weekly player stats in parquet format
  * ```
  */
 export function buildPlayerStatsUrl(
   season: Season,
   summaryLevel: StatsSummaryLevel = 'week',
-  format: FileFormat = 'csv'
+  format: FileFormat = 'parquet'
 ): string {
   return buildNflverseUrl(
     'stats_player',
@@ -137,13 +137,13 @@ export function buildPlayerStatsUrl(
  * @example
  * ```typescript
  * buildTeamStatsUrl(2023, 'reg');
- * // Returns URL for 2023 regular-season team stats in CSV format
+ * // Returns URL for 2023 regular-season team stats in parquet format
  * ```
  */
 export function buildTeamStatsUrl(
   season: Season,
   summaryLevel: StatsSummaryLevel = 'week',
-  format: FileFormat = 'csv'
+  format: FileFormat = 'parquet'
 ): string {
   return buildNflverseUrl(
     'stats_team',
@@ -165,7 +165,7 @@ export function buildTeamStatsUrl(
  * // Returns URL for 2023 roster data
  * ```
  */
-export function buildRosterUrl(season: Season, format: FileFormat = 'csv'): string {
+export function buildRosterUrl(season: Season, format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('rosters', `roster_${season}`, format);
 }
 
@@ -182,7 +182,7 @@ export function buildRosterUrl(season: Season, format: FileFormat = 'csv'): stri
  * // Returns URL for 2023 weekly roster data
  * ```
  */
-export function buildWeeklyRosterUrl(season: Season, format: FileFormat = 'csv'): string {
+export function buildWeeklyRosterUrl(season: Season, format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('weekly_rosters', `roster_weekly_${season}`, format);
 }
 
@@ -198,10 +198,10 @@ export function buildWeeklyRosterUrl(season: Season, format: FileFormat = 'csv')
  * @example
  * ```typescript
  * buildScheduleUrl();
- * // Returns: 'https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv'
+ * // Returns: 'https://github.com/nflverse/nflverse-data/releases/download/schedules/games.parquet'
  * ```
  */
-export function buildScheduleUrl(format: FileFormat = 'csv'): string {
+export function buildScheduleUrl(format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('schedules', 'games', format);
 }
 
@@ -217,7 +217,7 @@ export function buildScheduleUrl(format: FileFormat = 'csv'): string {
  * // Returns URL for teams_colors_logos data in CSV format
  * ```
  */
-export function buildTeamsUrl(format: FileFormat = 'csv'): string {
+export function buildTeamsUrl(format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('teams', 'teams_colors_logos', format);
 }
 
@@ -250,7 +250,7 @@ export function buildPlayersUrl(format: FileFormat = 'csv'): string {
  * // Returns URL for 2023 participation data
  * ```
  */
-export function buildParticipationUrl(season: Season, format: FileFormat = 'csv'): string {
+export function buildParticipationUrl(season: Season, format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('pbp_participation', `pbp_participation_${season}`, format);
 }
 
@@ -284,7 +284,7 @@ export function buildDepthChartsUrl(season: Season, format: FileFormat = 'csv'):
  * // Returns URL for 2023 injuries data
  * ```
  */
-export function buildInjuriesUrl(season: Season, format: FileFormat = 'csv'): string {
+export function buildInjuriesUrl(season: Season, format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('injuries', `injuries_${season}`, format);
 }
 
@@ -300,10 +300,10 @@ export function buildInjuriesUrl(season: Season, format: FileFormat = 'csv'): st
  * @example
  * ```typescript
  * buildDraftPicksUrl();
- * // Returns: '.../draft_picks/draft_picks.csv'
+ * // Returns: '.../draft_picks/draft_picks.parquet'
  * ```
  */
-export function buildDraftPicksUrl(format: FileFormat = 'csv'): string {
+export function buildDraftPicksUrl(format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('draft_picks', 'draft_picks', format);
 }
 
@@ -319,10 +319,10 @@ export function buildDraftPicksUrl(format: FileFormat = 'csv'): string {
  * @example
  * ```typescript
  * buildCombineUrl();
- * // Returns: '.../combine/combine.csv'
+ * // Returns: '.../combine/combine.parquet'
  * ```
  */
-export function buildCombineUrl(format: FileFormat = 'csv'): string {
+export function buildCombineUrl(format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('combine', 'combine', format);
 }
 
@@ -350,7 +350,7 @@ export function buildContractsUrl(format: FileFormat = 'csv'): string {
  * @param format - File format (csv, parquet, rds, json)
  * @returns URL to the officials data file
  */
-export function buildOfficialsUrl(format: FileFormat = 'csv'): string {
+export function buildOfficialsUrl(format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('officials', 'officials', format);
 }
 
@@ -362,7 +362,7 @@ export function buildOfficialsUrl(format: FileFormat = 'csv'): string {
  * @param format - File format (csv, parquet, rds, json)
  * @returns URL to the trades data file
  */
-export function buildTradesUrl(format: FileFormat = 'csv'): string {
+export function buildTradesUrl(format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('trades', 'trades', format);
 }
 
@@ -373,7 +373,7 @@ export function buildTradesUrl(format: FileFormat = 'csv'): string {
  * @param format - File format (csv, parquet, rds, json)
  * @returns URL to the FTN charting data file
  */
-export function buildFtnChartingUrl(season: Season, format: FileFormat = 'csv'): string {
+export function buildFtnChartingUrl(season: Season, format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('ftn_charting', `ftn_charting_${season}`, format);
 }
 
@@ -427,17 +427,17 @@ export type PfrSummaryLevel = 'week' | 'season';
  * @example
  * ```typescript
  * buildPfrAdvstatsUrl('pass', 'week', 2023);
- * // Returns: '.../pfr_advstats/advstats_week_pass_2023.csv'
+ * // Returns: '.../pfr_advstats/advstats_week_pass_2023.parquet'
  *
  * buildPfrAdvstatsUrl('def', 'season');
- * // Returns: '.../pfr_advstats/advstats_season_def.csv'
+ * // Returns: '.../pfr_advstats/advstats_season_def.parquet'
  * ```
  */
 export function buildPfrAdvstatsUrl(
   statType: PfrStatType,
   summaryLevel: PfrSummaryLevel,
   season?: Season,
-  format: FileFormat = 'csv'
+  format: FileFormat = 'parquet'
 ): string {
   if (summaryLevel === 'week') {
     if (season === undefined) {
@@ -461,7 +461,7 @@ export function buildPfrAdvstatsUrl(
  * // Returns URL for 2023 snap counts
  * ```
  */
-export function buildSnapCountsUrl(season: Season, format: FileFormat = 'csv'): string {
+export function buildSnapCountsUrl(season: Season, format: FileFormat = 'parquet'): string {
   return buildNflverseUrl('snap_counts', `snap_counts_${season}`, format);
 }
 

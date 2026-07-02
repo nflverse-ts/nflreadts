@@ -65,28 +65,40 @@ export function getToday(): DateString {
 }
 
 /**
+ * Get the season flip date for a year: the Wednesday after Labor Day
+ * (first Monday of September). Matches nflreadr's most_recent_season(),
+ * which considers year N the current season starting on that Wednesday.
+ *
+ * @param year - Calendar year
+ * @returns Date of the Wednesday after Labor Day
+ */
+export function getSeasonFlipDate(year: number): Date {
+  const september1 = new Date(year, 8, 1);
+  const firstMonday = 1 + ((8 - september1.getDay()) % 7);
+  return new Date(year, 8, firstMonday + 2);
+}
+
+/**
  * Calculate the season from a date
- * NFL season runs from September (current year) to February (next year)
+ * NFL season runs from early September (current year) to February (next year).
+ * Year N becomes the current season on the Wednesday after Labor Day,
+ * matching nflreadr's most_recent_season().
  *
  * @param date - Date to calculate season from
  * @returns NFL season year
  *
  * @example
  * ```typescript
- * getSeasonFromDate(new Date('2023-09-07')); // September 2023
+ * getSeasonFromDate(new Date(2023, 8, 7)); // September 7, 2023 (after Labor Day Wed)
  * // Returns: 2023
  *
- * getSeasonFromDate(new Date('2023-01-15')); // January 2023
+ * getSeasonFromDate(new Date(2023, 0, 15)); // January 15, 2023
  * // Returns: 2022 (previous year's season)
  * ```
  */
 export function getSeasonFromDate(date: Date): Season {
   const year = date.getFullYear();
-  const month = date.getMonth(); // 0-11
-
-  // January-August: previous year's season
-  // September-December: current year's season
-  return month < 8 ? year - 1 : year;
+  return date >= getSeasonFlipDate(year) ? year : year - 1;
 }
 
 /**

@@ -149,7 +149,7 @@ export function assertValidWeek(
  * ```
  */
 export function isValidTeam(team: string): team is TeamAbbr {
-  return (NFL_TEAMS as readonly string[]).includes(team);
+  return NFL_TEAMS.includes(team);
 }
 
 /**
@@ -169,10 +169,7 @@ export function isValidTeam(team: string): team is TeamAbbr {
  * ```
  */
 export function isValidTeamOrHistorical(team: string): team is AnyTeamAbbr {
-  return (
-    (NFL_TEAMS as readonly string[]).includes(team) ||
-    (HISTORICAL_TEAMS as readonly string[]).includes(team)
-  );
+  return NFL_TEAMS.includes(team) || HISTORICAL_TEAMS.includes(team);
 }
 
 /**

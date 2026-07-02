@@ -64,6 +64,6 @@ export type SnapCountData = SnapCountRecord[];
  * Options for loading snap count data
  */
 export interface LoadSnapCountsOptions {
-  /** File format to load (csv or parquet) */
+  /** File format to load. Defaults to 'parquet'; pass 'csv' if you need it. */
   format?: 'csv' | 'parquet';
 }

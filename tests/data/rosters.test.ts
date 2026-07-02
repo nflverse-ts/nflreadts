@@ -16,6 +16,19 @@ vi.mock('../../src/client/client.js', () => ({
   })),
 }));
 
+// Fixtures are CSV strings; route the parquet default path through the real
+// CSV parser so both format branches share the same fixtures.
+vi.mock('../../src/utils/parse.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/utils/parse.js')>();
+  return {
+    ...actual,
+    parseParquet: vi.fn((buffer: ArrayBuffer | string) => {
+      const text = typeof buffer === 'string' ? buffer : new TextDecoder().decode(buffer);
+      return Promise.resolve(actual.parseCsv(text).data);
+    }),
+  };
+});
+
 // Mock the datetime utils
 vi.mock('../../src/utils/datetime.js', async () => {
   const actual = await vi.importActual<typeof import('../../src/utils/datetime.js')>(
@@ -53,7 +66,7 @@ describe('loadRosters', () => {
       expect(result.value[0]?.full_name).toBe('Patrick Mahomes');
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('roster_2024.csv'),
+        expect.stringContaining('roster_2024.parquet'),
         expect.any(Object)
       );
     });
@@ -76,7 +89,7 @@ describe('loadRosters', () => {
       expect(result.value).toHaveLength(1);
       expect(result.value[0]?.full_name).toBe('Josh Allen');
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('roster_2023.csv'),
+        expect.stringContaining('roster_2023.parquet'),
         expect.any(Object)
       );
     });
@@ -107,11 +120,11 @@ describe('loadRosters', () => {
       expect(result.value).toHaveLength(2);
       expect(mockGet).toHaveBeenCalledTimes(2);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('roster_2022.csv'),
+        expect.stringContaining('roster_2022.parquet'),
         expect.any(Object)
       );
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('roster_2023.csv'),
+        expect.stringContaining('roster_2023.parquet'),
         expect.any(Object)
       );
     });
@@ -133,11 +146,11 @@ describe('loadRosters', () => {
       // Should call for many seasons (1920-2024 = 105 seasons)
       expect(mockGet.mock.calls.length).toBe(105);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('roster_1920.csv'),
+        expect.stringContaining('roster_1920.parquet'),
         expect.any(Object)
       );
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('roster_2024.csv'),
+        expect.stringContaining('roster_2024.parquet'),
         expect.any(Object)
       );
     });
@@ -209,7 +222,7 @@ describe('loadRosters', () => {
   });
 
   describe('format options', () => {
-    it('should use CSV format by default', async () => {
+    it('should load parquet format by default', async () => {
       const mockResponse = {
         data: 'season,team,full_name\n2023,KC,Patrick Mahomes',
         status: 200,
@@ -222,30 +235,24 @@ describe('loadRosters', () => {
 
       await loadRosters(2023);
 
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'), expect.any(Object));
     });
 
-    it('should use Parquet format when specified', async () => {
-      // Create a minimal Parquet-like response (in reality, this would be binary data)
+    it('should load CSV format when specified', async () => {
       const mockResponse = {
-        data: new ArrayBuffer(0),
+        data: 'season,team,full_name\n2023,KC,Patrick Mahomes',
         status: 200,
-        headers: { 'content-type': 'application/octet-stream' },
+        headers: { 'content-type': 'text/csv' },
         fromCache: false,
         url: 'test-url',
       };
 
       mockGet.mockResolvedValue(mockResponse);
 
-      // This will fail parsing, but we're testing URL construction
-      try {
-        await loadRosters(2023, { format: 'parquet' });
-      } catch (error) {
-        // Expected to fail due to empty buffer
-      }
+      const result = await loadRosters(2023, { format: 'csv' });
 
-      // Just verify the URL contains .parquet
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'), expect.any(Object));
+      expect(result.ok).toBe(true);
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'), expect.any(Object));
     });
   });
 

@@ -56,8 +56,8 @@ const getLogger = () => logger ?? (logger = createLogger('loadRostersWeekly'));
  * // Load all available data (2002+)
  * const rostersAll = await loadRostersWeekly(true);
  *
- * // Load with parquet format (faster, smaller file size)
- * const rostersParquet = await loadRostersWeekly(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const rostersCsv = await loadRostersWeekly(2023, { format: 'csv' });
  * ```
  *
  * @see {@link https://nflreadr.nflverse.com/reference/load_rosters_weekly.html | nflreadr::load_rosters_weekly}
@@ -66,7 +66,7 @@ export async function loadRostersWeekly(
   seasons?: Season | Season[] | true,
   options: LoadRostersWeeklyOptions = {}
 ): Promise<Result<WeeklyRosterData, Error>> {
-  const { format = 'csv' } = options;
+  const { format = 'parquet' } = options;
 
   try {
     // Determine which seasons to load (weekly rosters available from 2002 onward)

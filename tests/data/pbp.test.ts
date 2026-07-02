@@ -16,6 +16,19 @@ vi.mock('../../src/client/client.js', () => ({
   })),
 }));
 
+// Fixtures are CSV strings; route the parquet default path through the real
+// CSV parser so both format branches share the same fixtures.
+vi.mock('../../src/utils/parse.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/utils/parse.js')>();
+  return {
+    ...actual,
+    parseParquet: vi.fn((buffer: ArrayBuffer | string) => {
+      const text = typeof buffer === 'string' ? buffer : new TextDecoder().decode(buffer);
+      return Promise.resolve(actual.parseCsv(text).data);
+    }),
+  };
+});
+
 // Mock the config manager
 vi.mock('../../src/config/manager.js', () => ({
   getConfig: vi.fn(() => ({
@@ -134,7 +147,7 @@ describe('loadPbp', () => {
   });
 
   describe('format support', () => {
-    it('should load CSV format by default', async () => {
+    it('should load parquet format by default', async () => {
       const mockResponse: HttpResponse = {
         data: 'play_id,season\n1,2023',
         status: 200,
@@ -148,15 +161,14 @@ describe('loadPbp', () => {
       const result = await loadPbp(2023);
 
       expect(result.ok).toBe(true);
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'));
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'));
     });
 
-    it('should load parquet format when specified', async () => {
-      // Mock parquet data as ArrayBuffer
-      const mockParquetData = new ArrayBuffer(100);
+    it('should load CSV format when specified', async () => {
+      const mockCsvData = 'a,b\n1,2';
 
       const mockResponse: HttpResponse = {
-        data: mockParquetData,
+        data: mockCsvData,
         status: 200,
         headers: {},
         fromCache: false,
@@ -165,9 +177,9 @@ describe('loadPbp', () => {
 
       mockGet.mockResolvedValue(mockResponse);
 
-      await loadPbp(2023, { format: 'parquet' });
+      await loadPbp(2023, { format: 'csv' });
 
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.parquet'));
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('.csv'));
     });
   });
 
@@ -308,7 +320,9 @@ describe('loadPbp', () => {
 
       await loadPbp(2023);
 
-      expect(mockGet).toHaveBeenCalledWith(expect.stringMatching(/pbp\/play_by_play_2023\.csv$/));
+      expect(mockGet).toHaveBeenCalledWith(
+        expect.stringMatching(/pbp\/play_by_play_2023\.parquet$/)
+      );
     });
   });
 });

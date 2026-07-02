@@ -57,8 +57,8 @@ const getLogger = () => logger ?? (logger = createLogger('loadTeamStats'));
  * // Load combined regular + postseason totals
  * const fullStats = await loadTeamStats(2023, { summaryLevel: 'reg+post' });
  *
- * // Load with parquet format (faster, smaller file size)
- * const statsParquet = await loadTeamStats(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const statsCsv = await loadTeamStats(2023, { format: 'csv' });
  * ```
  *
  * @see {@link https://nflreadr.nflverse.com/reference/load_team_stats.html | nflreadr::load_team_stats}
@@ -67,7 +67,7 @@ export async function loadTeamStats(
   seasons?: Season | Season[] | true,
   options: LoadTeamStatsOptions = {}
 ): Promise<Result<TeamStatsData, Error>> {
-  const { format = 'csv', summaryLevel = 'week' } = options;
+  const { format = 'parquet', summaryLevel = 'week' } = options;
 
   try {
     // Determine which seasons to load

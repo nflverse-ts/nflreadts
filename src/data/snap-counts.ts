@@ -56,8 +56,8 @@ const getLogger = () => logger ?? (logger = createLogger('loadSnapCounts'));
  * // Load all available data (2012+)
  * const snapsAll = await loadSnapCounts(true);
  *
- * // Load with parquet format (faster, smaller file size)
- * const snapsParquet = await loadSnapCounts(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const snapsCsv = await loadSnapCounts(2023, { format: 'csv' });
  * ```
  *
  * @see {@link https://nflreadr.nflverse.com/reference/load_snap_counts.html | nflreadr::load_snap_counts}
@@ -66,7 +66,7 @@ export async function loadSnapCounts(
   seasons?: Season | Season[] | true,
   options: LoadSnapCountsOptions = {}
 ): Promise<Result<SnapCountData, Error>> {
-  const { format = 'csv' } = options;
+  const { format = 'parquet' } = options;
 
   try {
     // Determine which seasons to load (snap counts available from 2012 onward)

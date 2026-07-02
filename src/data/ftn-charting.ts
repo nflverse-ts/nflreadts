@@ -63,8 +63,8 @@ const getLogger = () => logger ?? (logger = createLogger('loadFtnCharting'));
  * // Load all available data (2022+)
  * const chartingAll = await loadFtnCharting(true);
  *
- * // Load with parquet format (faster, smaller file size)
- * const chartingParquet = await loadFtnCharting(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const chartingCsv = await loadFtnCharting(2023, { format: 'csv' });
  * ```
  *
  * @see {@link https://nflreadr.nflverse.com/reference/load_ftn_charting.html | nflreadr::load_ftn_charting}
@@ -73,7 +73,7 @@ export async function loadFtnCharting(
   seasons?: Season | Season[] | true,
   options: LoadFtnChartingOptions = {}
 ): Promise<Result<FtnChartingData, Error>> {
-  const { format = 'csv' } = options;
+  const { format = 'parquet' } = options;
 
   try {
     // Determine which seasons to load (FTN charting available from 2022 onward)

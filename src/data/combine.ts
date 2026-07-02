@@ -59,8 +59,8 @@ const getLogger = () => logger ?? (logger = createLogger('combine'));
  * // Load multiple combine classes
  * const classes = await loadCombine([2022, 2023]);
  *
- * // Use Parquet format for better performance
- * const parquetResult = await loadCombine(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const csvResult = await loadCombine(2023, { format: 'csv' });
  * ```
  *
  * @see https://nflreadr.nflverse.com/reference/load_combine.html
@@ -69,7 +69,7 @@ export async function loadCombine(
   seasons?: Season | Season[] | true,
   options: LoadCombineOptions = {}
 ): Promise<Result<CombineRecord[], Error>> {
-  const { format = 'csv', ...loadOptions } = options;
+  const { format = 'parquet', ...loadOptions } = options;
 
   try {
     assertValidFormat(format);

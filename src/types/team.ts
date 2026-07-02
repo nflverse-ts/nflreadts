@@ -115,7 +115,8 @@ export interface TeamRecord {
 export interface LoadTeamsOptions extends LoadOptions {
   /**
    * File format to use
-   * @default 'csv'
+   * Defaults to 'parquet'; pass 'csv' if you need it.
+   * @default 'parquet'
    */
   format?: 'csv' | 'parquet';
 

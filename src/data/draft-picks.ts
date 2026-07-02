@@ -57,8 +57,8 @@ const getLogger = () => logger ?? (logger = createLogger('draft-picks'));
  * // Load multiple draft classes
  * const classes = await loadDraftPicks([2022, 2023]);
  *
- * // Use Parquet format for better performance
- * const parquetResult = await loadDraftPicks(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const csvResult = await loadDraftPicks(2023, { format: 'csv' });
  * ```
  *
  * @see https://nflreadr.nflverse.com/reference/load_draft_picks.html
@@ -67,7 +67,7 @@ export async function loadDraftPicks(
   seasons?: Season | Season[] | true,
   options: LoadDraftPicksOptions = {}
 ): Promise<Result<DraftPickRecord[], Error>> {
-  const { format = 'csv', ...loadOptions } = options;
+  const { format = 'parquet', ...loadOptions } = options;
 
   try {
     assertValidFormat(format);

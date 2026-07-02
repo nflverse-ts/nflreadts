@@ -6,6 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadPfrAdvstats } from '../../src/data/pfr-advstats.js';
+import { parseCsv } from '../../src/utils/parse.js';
 
 // Use vi.hoisted to declare mocks that will be used in vi.mock
 const { mockGet, mockParseParquet } = vi.hoisted(() => ({
@@ -65,6 +66,12 @@ const csvResponse = (data: string) => ({
 describe('loadPfrAdvstats', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Fixtures are CSV strings; route the parquet default path through the
+    // real CSV parser so both format branches share the same fixtures.
+    mockParseParquet.mockImplementation((buffer: ArrayBuffer | string) => {
+      const text = typeof buffer === 'string' ? buffer : new TextDecoder().decode(buffer);
+      return Promise.resolve(parseCsv(text).data);
+    });
     mockGet.mockResolvedValue(csvResponse(weekCsv));
   });
 
@@ -75,7 +82,7 @@ describe('loadPfrAdvstats', () => {
       expect(result.ok).toBe(true);
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringMatching(/pfr_advstats\/advstats_week_pass_2024\.csv$/),
+        expect.stringMatching(/pfr_advstats\/advstats_week_pass_2024\.parquet$/),
         expect.any(Object)
       );
     });
@@ -87,17 +94,17 @@ describe('loadPfrAdvstats', () => {
 
       expect(mockGet).toHaveBeenNthCalledWith(
         1,
-        expect.stringMatching(/advstats_week_rush_2023\.csv$/),
+        expect.stringMatching(/advstats_week_rush_2023\.parquet$/),
         expect.any(Object)
       );
       expect(mockGet).toHaveBeenNthCalledWith(
         2,
-        expect.stringMatching(/advstats_week_rec_2023\.csv$/),
+        expect.stringMatching(/advstats_week_rec_2023\.parquet$/),
         expect.any(Object)
       );
       expect(mockGet).toHaveBeenNthCalledWith(
         3,
-        expect.stringMatching(/advstats_week_def_2023\.csv$/),
+        expect.stringMatching(/advstats_week_def_2023\.parquet$/),
         expect.any(Object)
       );
     });
@@ -113,22 +120,20 @@ describe('loadPfrAdvstats', () => {
       expect(result.ok).toBe(true);
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringMatching(/pfr_advstats\/advstats_season_def\.csv$/),
+        expect.stringMatching(/pfr_advstats\/advstats_season_def\.parquet$/),
         expect.any(Object)
       );
     });
 
-    it('should use parquet URLs when format is parquet', async () => {
-      mockParseParquet.mockResolvedValue([{ season: 2023 }]);
-      mockGet.mockResolvedValue(csvResponse(''));
+    it('should use csv URLs when format is csv', async () => {
+      const result = await loadPfrAdvstats(2023, { format: 'csv' });
 
-      await loadPfrAdvstats(2023, { format: 'parquet' });
-
+      expect(result.ok).toBe(true);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringMatching(/advstats_week_pass_2023\.parquet$/),
+        expect.stringMatching(/advstats_week_pass_2023\.csv$/),
         expect.any(Object)
       );
-      expect(mockParseParquet).toHaveBeenCalledTimes(1);
+      expect(mockParseParquet).not.toHaveBeenCalled();
     });
   });
 
@@ -139,11 +144,11 @@ describe('loadPfrAdvstats', () => {
       expect(result.ok).toBe(true);
       expect(mockGet).toHaveBeenCalledTimes(2);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringMatching(/advstats_week_pass_2022\.csv$/),
+        expect.stringMatching(/advstats_week_pass_2022\.parquet$/),
         expect.any(Object)
       );
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringMatching(/advstats_week_pass_2023\.csv$/),
+        expect.stringMatching(/advstats_week_pass_2023\.parquet$/),
         expect.any(Object)
       );
     });

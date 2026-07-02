@@ -1,31 +1,24 @@
 /**
  * Common type definitions for NFL data
  * @module types/common
+ *
+ * Core domain types (Season, Week, SeasonType, etc.) come from the shared
+ * `@nflverse/types` foundation package and are re-exported here so existing
+ * imports keep working.
  */
 
-/**
- * NFL Season type
- * Valid seasons typically start from 1999 (modern NFL era)
- */
-export type Season = number;
-
-/**
- * NFL Week number
- * Regular season: 1-18
- * Playoffs: 19-22 (Wild Card, Divisional, Conference, Super Bowl)
- */
-export type Week = number;
-
-/**
- * NFL Season type (regular season, postseason, preseason)
- */
-export type SeasonType = 'REG' | 'POST' | 'PRE';
-
-/**
- * NFL Team abbreviation
- * Standard 2-4 character team codes
- */
-export type TeamAbbr = string;
+export type {
+  Season,
+  Week,
+  SeasonType,
+  DateString,
+  Down,
+  Conference,
+  Division,
+  Position,
+  /** NFL Team abbreviation (standard 2-4 character team codes) */
+  Team as TeamAbbr,
+} from '@nflverse/types';
 
 /**
  * NFL Player ID
@@ -46,53 +39,9 @@ export type GameId = string;
 export type PlayId = string;
 
 /**
- * Position abbreviation
- */
-export type Position =
-  // Offense
-  | 'QB'
-  | 'RB'
-  | 'FB'
-  | 'WR'
-  | 'TE'
-  | 'OL'
-  | 'OT'
-  | 'OG'
-  | 'C'
-  // Defense
-  | 'DL'
-  | 'DE'
-  | 'DT'
-  | 'NT'
-  | 'LB'
-  | 'ILB'
-  | 'OLB'
-  | 'MLB'
-  | 'DB'
-  | 'CB'
-  | 'S'
-  | 'SS'
-  | 'FS'
-  // Special Teams
-  | 'K'
-  | 'P'
-  | 'LS';
-// Other
-
-/**
  * Side of the ball
  */
 export type Side = 'offense' | 'defense' | 'special';
-
-/**
- * Conference type
- */
-export type Conference = 'AFC' | 'NFC';
-
-/**
- * Division type
- */
-export type Division = 'East' | 'West' | 'North' | 'South';
 
 /**
  * Full division name
@@ -122,11 +71,6 @@ export type PlayType =
   | 'no_play';
 
 /**
- * Down number (1-4)
- */
-export type Down = 1 | 2 | 3 | 4;
-
-/**
  * Game result status
  */
 export type GameStatus =
@@ -136,11 +80,6 @@ export type GameStatus =
   | 'final'
   | 'postponed'
   | 'canceled';
-
-/**
- * Date string in ISO format (YYYY-MM-DD)
- */
-export type DateString = string;
 
 /**
  * Timestamp string in ISO format

@@ -54,8 +54,8 @@ const getLogger = () => logger ?? (logger = createLogger('teams'));
  *   console.error('Error loading teams:', result.error);
  * }
  *
- * // Load with Parquet format for better performance
- * const parquetResult = await loadTeams({ format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const csvResult = await loadTeams({ format: 'csv' });
  *
  * // Include historical teams and non-standard abbreviations
  * const allResult = await loadTeams({ current: false });
@@ -66,7 +66,7 @@ const getLogger = () => logger ?? (logger = createLogger('teams'));
 export async function loadTeams(
   options: LoadTeamsOptions = {}
 ): Promise<Result<TeamRecord[], Error>> {
-  const { format = 'csv', current = true, ...loadOptions } = options;
+  const { format = 'parquet', current = true, ...loadOptions } = options;
 
   try {
     // Validate format parameter

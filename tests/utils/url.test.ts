@@ -85,44 +85,46 @@ describe('URL Utilities', () => {
   describe('buildPbpUrl', () => {
     it('should build play-by-play URL', () => {
       const url = buildPbpUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/pbp/play_by_play_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/pbp/play_by_play_2024.parquet`);
     });
 
     it('should support different formats', () => {
-      const url = buildPbpUrl(2024, 'parquet');
-      expect(url).toBe(`${mockBaseUrl}/pbp/play_by_play_2024.parquet`);
+      const url = buildPbpUrl(2024, 'csv');
+      expect(url).toBe(`${mockBaseUrl}/pbp/play_by_play_2024.csv`);
     });
   });
 
   describe('buildPlayerStatsUrl', () => {
     it('should build player stats URL (weekly by default)', () => {
       const url = buildPlayerStatsUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/stats_player/stats_player_week_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/stats_player/stats_player_week_2024.parquet`);
     });
 
     it('should map summary levels to pre-aggregated files', () => {
       expect(buildPlayerStatsUrl(2024, 'reg')).toBe(
-        `${mockBaseUrl}/stats_player/stats_player_reg_2024.csv`
+        `${mockBaseUrl}/stats_player/stats_player_reg_2024.parquet`
       );
       expect(buildPlayerStatsUrl(2024, 'post')).toBe(
-        `${mockBaseUrl}/stats_player/stats_player_post_2024.csv`
+        `${mockBaseUrl}/stats_player/stats_player_post_2024.parquet`
       );
       expect(buildPlayerStatsUrl(2024, 'reg+post')).toBe(
-        `${mockBaseUrl}/stats_player/stats_player_regpost_2024.csv`
+        `${mockBaseUrl}/stats_player/stats_player_regpost_2024.parquet`
       );
     });
 
     it('should support different formats', () => {
-      const url = buildPlayerStatsUrl(2024, 'week', 'parquet');
-      expect(url).toBe(`${mockBaseUrl}/stats_player/stats_player_week_2024.parquet`);
+      const url = buildPlayerStatsUrl(2024, 'week', 'csv');
+      expect(url).toBe(`${mockBaseUrl}/stats_player/stats_player_week_2024.csv`);
     });
   });
 
   describe('buildTeamStatsUrl', () => {
     it('should build team stats URL with summary level', () => {
-      expect(buildTeamStatsUrl(2024)).toBe(`${mockBaseUrl}/stats_team/stats_team_week_2024.csv`);
-      expect(buildTeamStatsUrl(2024, 'reg+post', 'parquet')).toBe(
-        `${mockBaseUrl}/stats_team/stats_team_regpost_2024.parquet`
+      expect(buildTeamStatsUrl(2024)).toBe(
+        `${mockBaseUrl}/stats_team/stats_team_week_2024.parquet`
+      );
+      expect(buildTeamStatsUrl(2024, 'reg+post', 'csv')).toBe(
+        `${mockBaseUrl}/stats_team/stats_team_regpost_2024.csv`
       );
     });
   });
@@ -130,33 +132,33 @@ describe('URL Utilities', () => {
   describe('buildRosterUrl', () => {
     it('should build roster URL', () => {
       const url = buildRosterUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/rosters/roster_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/rosters/roster_2024.parquet`);
     });
   });
 
   describe('buildWeeklyRosterUrl', () => {
     it('should build weekly roster URL', () => {
       const url = buildWeeklyRosterUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/weekly_rosters/roster_weekly_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/weekly_rosters/roster_weekly_2024.parquet`);
     });
   });
 
   describe('buildScheduleUrl', () => {
     it('should build the all-seasons games URL', () => {
       const url = buildScheduleUrl();
-      expect(url).toBe(`${mockBaseUrl}/schedules/games.csv`);
+      expect(url).toBe(`${mockBaseUrl}/schedules/games.parquet`);
     });
 
     it('should support different formats', () => {
-      const url = buildScheduleUrl('parquet');
-      expect(url).toBe(`${mockBaseUrl}/schedules/games.parquet`);
+      const url = buildScheduleUrl('csv');
+      expect(url).toBe(`${mockBaseUrl}/schedules/games.csv`);
     });
   });
 
   describe('buildTeamsUrl', () => {
     it('should build teams URL without season', () => {
       const url = buildTeamsUrl();
-      expect(url).toBe(`${mockBaseUrl}/teams/teams_colors_logos.csv`);
+      expect(url).toBe(`${mockBaseUrl}/teams/teams_colors_logos.parquet`);
     });
 
     it('should support different formats', () => {
@@ -175,7 +177,7 @@ describe('URL Utilities', () => {
   describe('buildParticipationUrl', () => {
     it('should build participation URL', () => {
       const url = buildParticipationUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/pbp_participation/pbp_participation_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/pbp_participation/pbp_participation_2024.parquet`);
     });
   });
 
@@ -189,21 +191,21 @@ describe('URL Utilities', () => {
   describe('buildInjuriesUrl', () => {
     it('should build injuries URL', () => {
       const url = buildInjuriesUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/injuries/injuries_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/injuries/injuries_2024.parquet`);
     });
   });
 
   describe('buildDraftPicksUrl', () => {
     it('should build the all-seasons draft picks URL', () => {
       const url = buildDraftPicksUrl();
-      expect(url).toBe(`${mockBaseUrl}/draft_picks/draft_picks.csv`);
+      expect(url).toBe(`${mockBaseUrl}/draft_picks/draft_picks.parquet`);
     });
   });
 
   describe('buildCombineUrl', () => {
     it('should build the all-seasons combine URL', () => {
       const url = buildCombineUrl();
-      expect(url).toBe(`${mockBaseUrl}/combine/combine.csv`);
+      expect(url).toBe(`${mockBaseUrl}/combine/combine.parquet`);
     });
   });
 
@@ -217,21 +219,21 @@ describe('URL Utilities', () => {
   describe('buildOfficialsUrl', () => {
     it('should build the officials URL', () => {
       const url = buildOfficialsUrl();
-      expect(url).toBe(`${mockBaseUrl}/officials/officials.csv`);
+      expect(url).toBe(`${mockBaseUrl}/officials/officials.parquet`);
     });
   });
 
   describe('buildTradesUrl', () => {
     it('should build the trades URL', () => {
       const url = buildTradesUrl();
-      expect(url).toBe(`${mockBaseUrl}/trades/trades.csv`);
+      expect(url).toBe(`${mockBaseUrl}/trades/trades.parquet`);
     });
   });
 
   describe('buildFtnChartingUrl', () => {
     it('should build FTN charting URL', () => {
       const url = buildFtnChartingUrl(2023);
-      expect(url).toBe(`${mockBaseUrl}/ftn_charting/ftn_charting_2023.csv`);
+      expect(url).toBe(`${mockBaseUrl}/ftn_charting/ftn_charting_2023.parquet`);
     });
   });
 
@@ -250,12 +252,12 @@ describe('URL Utilities', () => {
   describe('buildPfrAdvstatsUrl', () => {
     it('should build week-level URLs per season', () => {
       const url = buildPfrAdvstatsUrl('pass', 'week', 2023);
-      expect(url).toBe(`${mockBaseUrl}/pfr_advstats/advstats_week_pass_2023.csv`);
+      expect(url).toBe(`${mockBaseUrl}/pfr_advstats/advstats_week_pass_2023.parquet`);
     });
 
     it('should build the single season-level file per stat type', () => {
       const url = buildPfrAdvstatsUrl('def', 'season');
-      expect(url).toBe(`${mockBaseUrl}/pfr_advstats/advstats_season_def.csv`);
+      expect(url).toBe(`${mockBaseUrl}/pfr_advstats/advstats_season_def.parquet`);
     });
 
     it('should throw when week level is missing a season', () => {
@@ -266,7 +268,7 @@ describe('URL Utilities', () => {
   describe('buildSnapCountsUrl', () => {
     it('should build snap counts URL', () => {
       const url = buildSnapCountsUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/snap_counts/snap_counts_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/snap_counts/snap_counts_2024.parquet`);
     });
   });
 

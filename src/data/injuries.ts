@@ -52,8 +52,8 @@ const getLogger = () => logger ?? (logger = createLogger('loadInjuries'));
  * // Load all available data (2009+)
  * const injuriesAll = await loadInjuries(true);
  *
- * // Load with parquet format (faster, smaller file size)
- * const injuriesParquet = await loadInjuries(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const injuriesCsv = await loadInjuries(2023, { format: 'csv' });
  * ```
  *
  * @see {@link https://nflreadr.nflverse.com/reference/load_injuries.html | nflreadr::load_injuries}
@@ -62,7 +62,7 @@ export async function loadInjuries(
   seasons?: Season | Season[] | true,
   options: LoadInjuriesOptions = {}
 ): Promise<Result<InjuryData, Error>> {
-  const { format = 'csv' } = options;
+  const { format = 'parquet' } = options;
 
   try {
     // Determine which seasons to load (injury reports available from 2009 onward)

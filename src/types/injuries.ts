@@ -67,6 +67,6 @@ export type InjuryData = InjuryRecord[];
  * Options for loading injury data
  */
 export interface LoadInjuriesOptions {
-  /** File format to load (csv or parquet) */
+  /** File format to load. Defaults to 'parquet'; pass 'csv' if you need it. */
   format?: 'csv' | 'parquet';
 }

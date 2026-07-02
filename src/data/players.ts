@@ -24,12 +24,12 @@ const getLogger = () => logger ?? (logger = createLogger('players'));
  * The player database is maintained across all NFL history and includes players from
  * multiple sources with cross-referenced IDs.
  *
- * @param options - Load options including format preference
+ * @param options - Load options including format preference (defaults to Parquet)
  * @returns Result containing array of player records or an error
  *
  * @example
  * ```typescript
- * // Load all players (CSV format)
+ * // Load all players (Parquet format by default)
  * const result = await loadPlayers();
  * if (result.ok) {
  *   console.log(`Loaded ${result.value.length} players`);
@@ -41,10 +41,10 @@ const getLogger = () => logger ?? (logger = createLogger('players'));
  *   console.error('Error loading players:', result.error);
  * }
  *
- * // Load using Parquet format for better performance
- * const parquetResult = await loadPlayers({ format: 'parquet' });
- * if (parquetResult.ok) {
- *   const players = parquetResult.value;
+ * // Load using CSV format instead
+ * const csvResult = await loadPlayers({ format: 'csv' });
+ * if (csvResult.ok) {
+ *   const players = csvResult.value;
  *   // Process players...
  * }
  * ```
@@ -54,7 +54,7 @@ const getLogger = () => logger ?? (logger = createLogger('players'));
 export async function loadPlayers(
   options: LoadPlayersOptions = {}
 ): Promise<Result<PlayerRecord[], Error>> {
-  const { format = 'csv', ...loadOptions } = options;
+  const { format = 'parquet', ...loadOptions } = options;
 
   try {
     // Validate format parameter

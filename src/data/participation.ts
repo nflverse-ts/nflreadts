@@ -76,8 +76,8 @@ function getMaxParticipationSeason(): Season {
  * // Load all available data (2016+)
  * const partAll = await loadParticipation(true);
  *
- * // Load with parquet format (faster, smaller file size)
- * const partParquet = await loadParticipation(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const partCsv = await loadParticipation(2023, { format: 'csv' });
  * ```
  *
  * @see {@link https://nflreadr.nflverse.com/reference/load_participation.html | nflreadr::load_participation}
@@ -86,7 +86,7 @@ export async function loadParticipation(
   seasons?: Season | Season[] | true,
   options: LoadParticipationOptions = {}
 ): Promise<Result<ParticipationData, Error>> {
-  const { format = 'csv' } = options;
+  const { format = 'parquet' } = options;
 
   try {
     // Determine which seasons to load (participation data available from 2016

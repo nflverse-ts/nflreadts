@@ -59,8 +59,8 @@ const PFR_SUMMARY_LEVELS: readonly PfrSummaryLevel[] = ['week', 'season'];
  *   summaryLevel: 'season',
  * });
  *
- * // Use parquet format
- * const parquet = await loadPfrAdvstats(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const csv = await loadPfrAdvstats(2023, { format: 'csv' });
  * ```
  *
  * @see https://nflreadr.nflverse.com/reference/load_pfr_advstats.html
@@ -69,7 +69,7 @@ export async function loadPfrAdvstats(
   seasons?: Season | Season[] | true,
   options: LoadPfrAdvstatsOptions = {}
 ): Promise<Result<PfrAdvstatsRecord[], Error>> {
-  const { statType = 'pass', summaryLevel = 'week', format = 'csv' } = options;
+  const { statType = 'pass', summaryLevel = 'week', format = 'parquet' } = options;
 
   try {
     assertOneOf(statType, PFR_STAT_TYPES, 'statType');

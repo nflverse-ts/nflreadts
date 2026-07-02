@@ -60,8 +60,8 @@ const getLogger = () => logger ?? (logger = createLogger('trades'));
  * // Load multiple seasons
  * const multi = await loadTrades([2022, 2023]);
  *
- * // Use Parquet format for better performance
- * const parquetResult = await loadTrades(2023, { format: 'parquet' });
+ * // Parquet is the default; pass 'csv' if you need CSV
+ * const csvResult = await loadTrades(2023, { format: 'csv' });
  * ```
  *
  * @see https://nflreadr.nflverse.com/reference/load_trades.html
@@ -70,7 +70,7 @@ export async function loadTrades(
   seasons?: Season | Season[] | true,
   options: LoadTradesOptions = {}
 ): Promise<Result<TradeRecord[], Error>> {
-  const { format = 'csv', ...loadOptions } = options;
+  const { format = 'parquet', ...loadOptions } = options;
 
   try {
     assertValidFormat(format);

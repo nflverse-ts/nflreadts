@@ -102,7 +102,7 @@ export type ParticipationData = ParticipationRecord[];
  * Options for loading participation data
  */
 export interface LoadParticipationOptions {
-  /** File format to load (csv or parquet) */
+  /** File format to load. Defaults to 'parquet'; pass 'csv' if you need it. */
   format?: 'csv' | 'parquet';
   /** Whether to merge with play-by-play data (not yet implemented) */
   includePbp?: boolean;

@@ -21,37 +21,52 @@ nflreadts brings the power of nflverse data tools to the TypeScript/JavaScript e
 - Features are being implemented incrementally (see [ROADMAP](docs/ROADMAP.md))
 - Early adopters and contributors are welcome!
 
-Current Phase: **Phase 3 Complete - Roster and Player Data**
+Current Phase: **Full loader parity with nflreadpy** (24 loaders, live-verified twice weekly by a scheduled canary)
 
 ## Features
 
-### ✅ Available Now
+### ✅ Data loading functions
 
-**Data Loading Functions:**
+**Core:**
 
-- **Play-by-Play Data**: Load comprehensive NFL play-by-play data with `loadPbp()`
-- **Player Statistics**: Load player stats with aggregation support via `loadPlayerStats()`
-- **Participation Data**: Load snap count and participation data with `loadParticipation()` (2016+)
-- **Rosters**: Load season-level roster information with `loadRosters()` (1920-present)
-- **Players**: Load all-time player database with `loadPlayers()`
-- **Depth Charts**: Load weekly depth charts with position rankings via `loadDepthCharts()` (2001+)
+- `loadPbp()` - play-by-play (1999+)
+- `loadPlayerStats()` / `loadTeamStats()` - player/team stats with summary levels (week, reg, post, reg+post)
+- `loadSchedules()` - games and results (1999+)
+- `loadTeams()` - team metadata, colors, logos
+- `loadPlayers()` - all-time player database
+- `loadRosters()` (1920+) / `loadRostersWeekly()` (2002+)
+- `loadDepthCharts()` (2001+)
+- `loadParticipation()` - play participation (2016+; FTN Data via nflverse for 2023+, CC-BY-SA 4.0)
 
-**Features:**
+**Advanced stats:**
 
-- **Multiple Formats**: Support for both CSV and Parquet file formats
-- **Full TypeScript Support**: Comprehensive type definitions with 100+ typed fields
-- **Promise-based API**: Modern async/await workflows
-- **Smart Caching**: Built-in HTTP caching for improved performance
-- **Rate Limiting**: Automatic rate limiting to respect data source limits
-- **Browser and Node.js**: Universal compatibility
-- **Minimal API Surface**: Clean exports with excellent tree-shaking
+- `loadNextgenStats()` - NGS passing/receiving/rushing (2016+)
+- `loadPfrAdvstats()` - PFR advanced stats, week/season levels (2018+)
+- `loadSnapCounts()` (2012+)
+- `loadFtnCharting()` - FTN charting (2022+)
+- `loadInjuries()` - injury reports (2009+)
 
-### 🚧 Planned
+**League business:**
 
-- Team schedules and game results
-- Advanced statistics (Next Gen Stats, QBR)
-- Betting lines and fantasy data
-- Contract and draft information
+- `loadDraftPicks()` (1980+), `loadCombine()` (2000+)
+- `loadContracts()` - OTC historical contracts
+- `loadOfficials()` (2015+), `loadTrades()` (2002+)
+
+**Fantasy (companion sources):**
+
+- `loadFfPlayerids()` - DynastyProcess ID crosswalk
+- `loadFfRankings()` - FantasyPros rankings (draft/week/all)
+- `loadFfOpportunity()` - ffverse expected fantasy points (2006+)
+
+**Package features:**
+
+- **Multiple Formats**: CSV and Parquet (some upstream assets are parquet-only; loaders default accordingly)
+- **Full TypeScript Support**: typed records derived from the live data schemas
+- **Promise-based API**: modern async/await workflows with Result-typed error handling
+- **Smart Caching**: built-in HTTP caching for improved performance
+- **Rate Limiting**: automatic rate limiting to respect data source limits
+- **Browser and Node.js**: universal compatibility
+- **Live canary CI**: every loader runs against real nflverse assets twice a week
 
 ## Installation
 
@@ -76,7 +91,7 @@ import {
   loadPlayers,
   loadDepthCharts,
   loadSchedules,
-  loadTeams
+  loadTeams,
 } from '@nflverse/nflreadts';
 
 // Load play-by-play data for 2023 season
@@ -189,7 +204,7 @@ if (seasonResult.valid) {
 }
 
 // Validate week by season type
-const weekResult = validateWeek(19, { seasonType: 'POST' });  // Playoffs
+const weekResult = validateWeek(19, { seasonType: 'POST' }); // Playoffs
 if (weekResult.valid) {
   console.log(`Week ${weekResult.value} is valid for POST season`);
 }
@@ -206,7 +221,7 @@ if (seasonsResult.valid) {
 
 // Assert validation (throws on invalid input)
 try {
-  assertValidSeason(1990);  // Throws ValidationError
+  assertValidSeason(1990); // Throws ValidationError
 } catch (error) {
   console.error(error.message);
   console.error(error.context); // { season: 1990, minSeason: 1999, maxSeason: 2025 }
@@ -214,6 +229,7 @@ try {
 ```
 
 **Validation Rules:**
+
 - **Seasons**: Must be 1999-present (+1 for scheduling)
 - **Weeks**:
   - Regular season (REG): 1-18

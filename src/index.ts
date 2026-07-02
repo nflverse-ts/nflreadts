@@ -13,14 +13,29 @@ export { version } from './version.js';
 // ============================================================================
 
 export {
+  loadCombine,
+  loadContracts,
   loadDepthCharts,
+  loadDraftPicks,
+  loadFfOpportunity,
+  loadFfPlayerids,
+  loadFfRankings,
+  loadFtnCharting,
+  loadInjuries,
+  loadNextgenStats,
+  loadOfficials,
   loadParticipation,
   loadPbp,
+  loadPfrAdvstats,
   loadPlayers,
   loadPlayerStats,
   loadRosters,
+  loadRostersWeekly,
   loadSchedules,
+  loadSnapCounts,
   loadTeams,
+  loadTeamStats,
+  loadTrades,
 } from './data/index.js';
 
 // ============================================================================
@@ -37,28 +52,64 @@ export type { NflReadConfig, PartialNflReadConfig } from './config/index.js';
 
 // Record types (function return values)
 export type {
+  CombineRecord,
+  ContractRecord,
+  ContractSeasonDetail,
   DepthChartRecord,
+  DraftPickRecord,
+  FfOpportunityRecord,
+  FfPlayeridsRecord,
+  FfRankingsRecord,
+  FtnChartingRecord,
+  InjuryRecord,
+  NextgenStatsRecord,
+  OfficialRecord,
   ParticipationRecord,
+  PfrAdvstatsRecord,
   PlayByPlayRecord,
   PlayerRecord,
   PlayerStatsRecord,
   RosterRecord,
   ScheduleRecord,
+  SnapCountRecord,
   TeamRecord,
+  TeamStatsRecord,
+  TradeRecord,
+  WeeklyRosterRecord,
 } from './types/index.js';
 
 // Options types (function parameters)
 export type {
+  FfOpportunityModelVersion,
+  FfOpportunityStatType,
+  FfRankingsType,
+  LoadCombineOptions,
+  LoadContractsOptions,
   LoadDepthChartsOptions,
+  LoadDraftPicksOptions,
+  LoadFfOpportunityOptions,
+  LoadFtnChartingOptions,
+  LoadInjuriesOptions,
+  LoadNextgenStatsOptions,
+  LoadOfficialsOptions,
   LoadOptions,
   LoadParticipationOptions,
   LoadPbpOptions,
+  LoadPfrAdvstatsOptions,
   LoadPlayersOptions,
   LoadPlayerStatsOptions,
   LoadRostersOptions,
+  LoadRostersWeeklyOptions,
   LoadSchedulesOptions,
+  LoadSnapCountsOptions,
   LoadTeamsOptions,
+  LoadTeamStatsOptions,
+  LoadTradesOptions,
+  SummaryLevel,
 } from './types/index.js';
+
+// Stat-type unions for the advanced loaders
+export type { NgsStatType, PfrStatType, PfrSummaryLevel } from './utils/url.js';
 
 // Common types used in data
 export type {

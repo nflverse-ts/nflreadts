@@ -59,7 +59,7 @@ describe('loadTeams', () => {
       expect(result.value[0]?.team_name).toBe('Kansas City Chiefs');
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('teams.csv'),
+        expect.stringContaining('teams_colors_logos.csv'),
         expect.any(Object)
       );
     });
@@ -260,7 +260,7 @@ STL,St. Louis Rams,2510,Rams,NFC,West,0`,
       expect(result.value.map((t) => t.team_abbr)).toEqual(['KC', 'BUF', 'STL']);
     });
 
-    it('should return all teams when team_current field is not present', async () => {
+    it('should keep all current-franchise abbreviations when current=true', async () => {
       const mockResponse = {
         data: `team_abbr,team_name,team_id,team_nick,team_conf,team_division
 KC,Kansas City Chiefs,2310,Chiefs,AFC,West

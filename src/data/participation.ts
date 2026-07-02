@@ -14,6 +14,7 @@ import type {
   ParticipationRecord,
 } from '../types/participation.js';
 
+import { getCurrentSeason } from '../utils/datetime.js';
 import { createLogger, type Logger } from '../utils/logger.js';
 import { parseCsv, parseParquet } from '../utils/parse.js';
 import { normalizeSeasons } from '../utils/seasons.js';
@@ -25,6 +26,17 @@ let logger: Logger | undefined;
 const getLogger = () => logger ?? (logger = createLogger('loadParticipation'));
 
 // Participation data is available from 2016 onward
+
+/**
+ * Latest season with published participation data.
+ * Since 2023, FTN delivers participation only after a season's postseason ends
+ * (roughly mid-February), so the in-progress season never has a file.
+ */
+function getMaxParticipationSeason(): Season {
+  const currentSeason = getCurrentSeason();
+  const deliveryDate = new Date(currentSeason + 1, 1, 15); // ~Feb 15 after the season
+  return new Date() >= deliveryDate ? currentSeason : currentSeason - 1;
+}
 
 /**
  * Load participation data for one or more NFL seasons
@@ -42,10 +54,13 @@ const getLogger = () => logger ?? (logger = createLogger('loadParticipation'));
  * @param seasons - Season(s) to load. Can be:
  *   - A single season number (e.g., 2023)
  *   - An array of seasons (e.g., [2022, 2023])
- *   - `true` to load all available seasons (2016-present)
- *   - `undefined` to load the current season
+ *   - `true` to load all available seasons (2016 through latest published)
+ *   - `undefined` to load the latest published season
  * @param options - Additional options for loading data
  * @returns Result containing array of participation records or an error
+ *
+ * Note: since 2023, participation is FTN-sourced and published only after each
+ * season's postseason ends - the in-progress season never has data.
  *
  * @example
  * ```typescript
@@ -74,8 +89,14 @@ export async function loadParticipation(
   const { format = 'csv' } = options;
 
   try {
-    // Determine which seasons to load (participation data available from 2016+)
-    const seasonsToLoad = normalizeSeasons(seasons, { minSeason: MIN_PARTICIPATION_SEASON });
+    // Determine which seasons to load (participation data available from 2016
+    // through the most recently completed season - see getMaxParticipationSeason)
+    const maxSeason = getMaxParticipationSeason();
+    const seasonsToLoad = normalizeSeasons(seasons, {
+      minSeason: MIN_PARTICIPATION_SEASON,
+      maxSeason,
+      defaultSeason: maxSeason,
+    });
 
     getLogger().debug(`Loading participation data for seasons: ${seasonsToLoad.join(', ')}`);
 
@@ -87,6 +108,12 @@ export async function loadParticipation(
       // Participation data only available from 2016 onward
       if (season < MIN_PARTICIPATION_SEASON) {
         const message = `Participation data is only available from ${MIN_PARTICIPATION_SEASON} onward. Requested season: ${season}`;
+        throw new Error(message);
+      }
+
+      // FTN delivers participation only after a season's postseason ends
+      if (season > maxSeason) {
+        const message = `Participation data for ${season} is not yet published. Participation is delivered after each season's postseason ends; latest available season: ${maxSeason}`;
         throw new Error(message);
       }
     }

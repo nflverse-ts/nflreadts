@@ -278,20 +278,14 @@ describe('loadParticipation', () => {
       expect(mockGet).not.toHaveBeenCalled();
     });
 
-    it('should accept future season (current + 1)', async () => {
-      const mockResponse: HttpResponse = {
-        data: 'nflverse_game_id,play_id\n2024_01_KC_PHI,1',
-        status: 200,
-        headers: {},
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
+    it('should reject seasons without published participation data', async () => {
+      // Participation is delivered only after a season's postseason ends,
+      // so the season after the latest published one is never available
       const result = await loadParticipation(2024);
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.message).toContain('not yet published');
     });
 
     it('should reject season too far in future', async () => {
@@ -316,7 +310,7 @@ describe('loadParticipation', () => {
       await loadParticipation(2023);
 
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringMatching(/participation\/participation_2023\.csv$/)
+        expect.stringMatching(/pbp_participation\/pbp_participation_2023\.csv$/)
       );
     });
   });

@@ -5,6 +5,7 @@
 
 import { HttpClient } from '../client/client.js';
 import { getConfig } from '../config/manager.js';
+import { NFL_TEAMS } from '../types/constants.js';
 import type { LoadTeamsOptions, TeamRecord } from '../types/team.js';
 import { Err, NetworkError, Ok, type Result } from '../types/error.js';
 import { createLogger, type Logger } from '../utils/logger.js';
@@ -105,25 +106,13 @@ export async function loadTeams(
       data = parseResult.data;
     }
 
-    // Filter for current teams if requested
-    // Note: The nflreadr implementation filters based on a 'team_current' field
-    // If the data doesn't have this field, we'll return all teams when current=true
-    // This matches the behavior where current teams are the default in nflverse
+    // Filter for current teams if requested. The teams_colors_logos file
+    // includes historical/relocated abbreviations (e.g. SD, STL, OAK), so
+    // current=true keeps only the 32 active franchise abbreviations.
     if (current && data.length > 0) {
-      // Check if the data has a field indicating current teams
-      // We need to check dynamically since team_current is not in our TeamRecord type
-      const firstRecord = data[0];
-
-      if (firstRecord && 'team_current' in (firstRecord as object)) {
-        // Define a type guard for filtering
-        const isCurrentTeam = (team: TeamRecord): boolean => {
-          const record = team as TeamRecord & { team_current?: boolean | number };
-          return record.team_current === true || record.team_current === 1;
-        };
-
-        data = data.filter(isCurrentTeam);
-        getLogger().debug(`Filtered to ${data.length} current teams`);
-      }
+      const currentTeams = new Set<string>(NFL_TEAMS);
+      data = data.filter((team) => currentTeams.has(team.team_abbr));
+      getLogger().debug(`Filtered to ${data.length} current teams`);
     }
 
     getLogger().info(`Loaded ${data.length} team records`);

@@ -21,6 +21,7 @@ import {
   buildRosterUrl,
   buildScheduleUrl,
   buildSnapCountsUrl,
+  buildTeamStatsUrl,
   buildTeamsUrl,
   buildWeeklyRosterUrl,
   getFilenameFromUrl,
@@ -89,14 +90,35 @@ describe('URL Utilities', () => {
   });
 
   describe('buildPlayerStatsUrl', () => {
-    it('should build player stats URL', () => {
+    it('should build player stats URL (weekly by default)', () => {
       const url = buildPlayerStatsUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/player_stats/player_stats_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/stats_player/stats_player_week_2024.csv`);
+    });
+
+    it('should map summary levels to pre-aggregated files', () => {
+      expect(buildPlayerStatsUrl(2024, 'reg')).toBe(
+        `${mockBaseUrl}/stats_player/stats_player_reg_2024.csv`
+      );
+      expect(buildPlayerStatsUrl(2024, 'post')).toBe(
+        `${mockBaseUrl}/stats_player/stats_player_post_2024.csv`
+      );
+      expect(buildPlayerStatsUrl(2024, 'reg+post')).toBe(
+        `${mockBaseUrl}/stats_player/stats_player_regpost_2024.csv`
+      );
     });
 
     it('should support different formats', () => {
-      const url = buildPlayerStatsUrl(2024, 'json');
-      expect(url).toBe(`${mockBaseUrl}/player_stats/player_stats_2024.json`);
+      const url = buildPlayerStatsUrl(2024, 'week', 'parquet');
+      expect(url).toBe(`${mockBaseUrl}/stats_player/stats_player_week_2024.parquet`);
+    });
+  });
+
+  describe('buildTeamStatsUrl', () => {
+    it('should build team stats URL with summary level', () => {
+      expect(buildTeamStatsUrl(2024)).toBe(`${mockBaseUrl}/stats_team/stats_team_week_2024.csv`);
+      expect(buildTeamStatsUrl(2024, 'reg+post', 'parquet')).toBe(
+        `${mockBaseUrl}/stats_team/stats_team_regpost_2024.parquet`
+      );
     });
   });
 
@@ -110,26 +132,31 @@ describe('URL Utilities', () => {
   describe('buildWeeklyRosterUrl', () => {
     it('should build weekly roster URL', () => {
       const url = buildWeeklyRosterUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/rosters/roster_weekly_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/weekly_rosters/roster_weekly_2024.csv`);
     });
   });
 
   describe('buildScheduleUrl', () => {
-    it('should build schedule URL', () => {
-      const url = buildScheduleUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/schedules/sched_2024.csv`);
+    it('should build the all-seasons games URL', () => {
+      const url = buildScheduleUrl();
+      expect(url).toBe(`${mockBaseUrl}/schedules/games.csv`);
+    });
+
+    it('should support different formats', () => {
+      const url = buildScheduleUrl('parquet');
+      expect(url).toBe(`${mockBaseUrl}/schedules/games.parquet`);
     });
   });
 
   describe('buildTeamsUrl', () => {
     it('should build teams URL without season', () => {
       const url = buildTeamsUrl();
-      expect(url).toBe(`${mockBaseUrl}/teams/teams.csv`);
+      expect(url).toBe(`${mockBaseUrl}/teams/teams_colors_logos.csv`);
     });
 
     it('should support different formats', () => {
       const url = buildTeamsUrl('json');
-      expect(url).toBe(`${mockBaseUrl}/teams/teams.json`);
+      expect(url).toBe(`${mockBaseUrl}/teams/teams_colors_logos.json`);
     });
   });
 
@@ -143,7 +170,7 @@ describe('URL Utilities', () => {
   describe('buildParticipationUrl', () => {
     it('should build participation URL', () => {
       const url = buildParticipationUrl(2024);
-      expect(url).toBe(`${mockBaseUrl}/participation/participation_2024.csv`);
+      expect(url).toBe(`${mockBaseUrl}/pbp_participation/pbp_participation_2024.csv`);
     });
   });
 

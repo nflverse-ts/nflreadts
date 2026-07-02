@@ -76,7 +76,7 @@ describe('loadPlayerStats', () => {
 
       expect(result.ok).toBe(true);
       expect(mockGet).toHaveBeenCalledTimes(1);
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('player_stats_2023'));
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('stats_player_week_2023'));
     });
 
     it('should load single season when number provided', async () => {
@@ -94,7 +94,7 @@ describe('loadPlayerStats', () => {
 
       expect(result.ok).toBe(true);
       expect(mockGet).toHaveBeenCalledTimes(1);
-      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('player_stats_2022'));
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('stats_player_week_2022'));
     });
 
     it('should load multiple seasons when array provided', async () => {
@@ -236,17 +236,19 @@ describe('loadPlayerStats', () => {
     });
   });
 
-  describe('summary level aggregation', () => {
-    it('should return weekly data unchanged for week level', async () => {
-      const mockResponse: HttpResponse = {
-        data: 'player_id,season,week,passing_yards\n00-0012345,2023,1,300\n00-0012345,2023,2,250',
-        status: 200,
-        headers: {},
-        fromCache: false,
-        url: 'test-url',
-      };
+  describe('summary level file selection', () => {
+    // Files are pre-aggregated by nflverse; the summary level selects which
+    // stats_player file is fetched and data passes through unchanged
+    const passthroughResponse: HttpResponse = {
+      data: 'player_id,season,week,passing_yards\n00-0012345,2023,1,300\n00-0012345,2023,2,250',
+      status: 200,
+      headers: {},
+      fromCache: false,
+      url: 'test-url',
+    };
 
-      mockGet.mockResolvedValue(mockResponse);
+    it('should return file contents unchanged', async () => {
+      mockGet.mockResolvedValue(passthroughResponse);
 
       const result = await loadPlayerStats(2023, { summaryLevel: 'week' });
 
@@ -258,167 +260,31 @@ describe('loadPlayerStats', () => {
       }
     });
 
-    it('should aggregate stats for reg level', async () => {
-      const mockResponse: HttpResponse = {
-        data: 'player_id,player_name,season,week,passing_yards,passing_tds\n00-0012345,P.Mahomes,2023,1,300,2\n00-0012345,P.Mahomes,2023,2,250,3',
-        status: 200,
-        headers: {},
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+    it('should fetch the reg file for reg level', async () => {
+      mockGet.mockResolvedValue(passthroughResponse);
 
       const result = await loadPlayerStats(2023, { summaryLevel: 'reg' });
 
       expect(result.ok).toBe(true);
-      if (result.ok) {
-        // Should be aggregated to 1 record per player
-        expect(result.value.length).toBe(1);
-        expect(result.value[0]?.week).toBeNull(); // Aggregated records have no week
-        expect(result.value[0]?.passing_yards).toBe(550); // 300 + 250
-        expect(result.value[0]?.passing_tds).toBe(5); // 2 + 3
-      }
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('stats_player_reg_2023'));
     });
 
-    it('should filter and aggregate regular season only for reg level', async () => {
-      const mockResponse: HttpResponse = {
-        data: 'player_id,player_name,season,week,passing_yards\n00-0012345,P.Mahomes,2023,1,300\n00-0012345,P.Mahomes,2023,18,250\n00-0012345,P.Mahomes,2023,19,400',
-        status: 200,
-        headers: {},
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadPlayerStats(2023, { summaryLevel: 'reg' });
-
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.value.length).toBe(1);
-        // Should only include weeks 1-18, exclude week 19 (postseason)
-        expect(result.value[0]?.passing_yards).toBe(550); // 300 + 250, not including 400
-      }
-    });
-
-    it('should filter and aggregate postseason only for post level', async () => {
-      const mockResponse: HttpResponse = {
-        data: 'player_id,player_name,season,week,passing_yards\n00-0012345,P.Mahomes,2023,18,300\n00-0012345,P.Mahomes,2023,19,250\n00-0012345,P.Mahomes,2023,20,400',
-        status: 200,
-        headers: {},
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+    it('should fetch the post file for post level', async () => {
+      mockGet.mockResolvedValue(passthroughResponse);
 
       const result = await loadPlayerStats(2023, { summaryLevel: 'post' });
 
       expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.value.length).toBe(1);
-        // Should only include weeks 19+, exclude week 18
-        expect(result.value[0]?.passing_yards).toBe(650); // 250 + 400, not including 300
-      }
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('stats_player_post_2023'));
     });
 
-    it('should aggregate all weeks for reg+post level', async () => {
-      const mockResponse: HttpResponse = {
-        data: 'player_id,player_name,season,week,passing_yards\n00-0012345,P.Mahomes,2023,1,100\n00-0012345,P.Mahomes,2023,18,200\n00-0012345,P.Mahomes,2023,19,300',
-        status: 200,
-        headers: {},
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+    it('should fetch the regpost file for reg+post level', async () => {
+      mockGet.mockResolvedValue(passthroughResponse);
 
       const result = await loadPlayerStats(2023, { summaryLevel: 'reg+post' });
 
       expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.value.length).toBe(1);
-        // Should include all weeks
-        expect(result.value[0]?.passing_yards).toBe(600); // 100 + 200 + 300
-      }
-    });
-
-    it('should aggregate multiple players separately', async () => {
-      const mockResponse: HttpResponse = {
-        data: 'player_id,player_name,season,week,passing_yards\n00-0012345,P.Mahomes,2023,1,300\n00-0012345,P.Mahomes,2023,2,250\n00-0023456,J.Allen,2023,1,280\n00-0023456,J.Allen,2023,2,310',
-        status: 200,
-        headers: {},
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadPlayerStats(2023, { summaryLevel: 'reg' });
-
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.value.length).toBe(2); // 2 players
-
-        // Find each player's stats
-        const mahomes = result.value.find((p) => p.player_id === '00-0012345');
-        const allen = result.value.find((p) => p.player_id === '00-0023456');
-
-        expect(mahomes?.passing_yards).toBe(550); // 300 + 250
-        expect(allen?.passing_yards).toBe(590); // 280 + 310
-      }
-    });
-
-    it('should aggregate all stat types correctly', async () => {
-      const mockResponse: HttpResponse = {
-        data: 'player_id,player_name,season,week,passing_yards,rushing_yards,receptions,def_tackles_solo,fg_made,fg_att\n00-0012345,Player,2023,1,100,50,5,3,2,3\n00-0012345,Player,2023,2,200,75,8,4,1,2',
-        status: 200,
-        headers: {},
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadPlayerStats(2023, { summaryLevel: 'reg' });
-
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.value.length).toBe(1);
-        const player = result.value[0];
-
-        // Verify different stat types are all summed correctly
-        expect(player.passing_yards).toBe(300); // 100 + 200
-        expect(player.rushing_yards).toBe(125); // 50 + 75
-        expect(player.receptions).toBe(13); // 5 + 8
-        expect(player.def_tackles_solo).toBe(7); // 3 + 4
-        expect(player.fg_made).toBe(3); // 2 + 1
-        expect(player.fg_att).toBe(5); // 3 + 2
-        // FG percentage should be recalculated
-        expect(player.fg_pct).toBeCloseTo(0.6, 2); // 3/5 = 0.6
-      }
-    });
-
-    it('should handle null/missing values in aggregation', async () => {
-      const mockResponse: HttpResponse = {
-        data: 'player_id,player_name,season,week,passing_yards,rushing_yards\n00-0012345,Player,2023,1,100,\n00-0012345,Player,2023,2,200,50',
-        status: 200,
-        headers: {},
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await loadPlayerStats(2023, { summaryLevel: 'reg' });
-
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.value.length).toBe(1);
-        expect(result.value[0]?.passing_yards).toBe(300); // 100 + 200
-        expect(result.value[0]?.rushing_yards).toBe(50); // 0 (null) + 50
-      }
+      expect(mockGet).toHaveBeenCalledWith(expect.stringContaining('stats_player_regpost_2023'));
     });
   });
 
@@ -558,7 +424,7 @@ describe('loadPlayerStats', () => {
       await loadPlayerStats(2023);
 
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringMatching(/player_stats\/player_stats_2023\.csv$/)
+        expect.stringMatching(/stats_player\/stats_player_week_2023\.csv$/)
       );
     });
   });

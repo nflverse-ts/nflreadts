@@ -12,10 +12,11 @@ export type SummaryLevel = 'week' | 'reg' | 'post' | 'reg+post';
 
 /**
  * Player statistics record
- * Contains comprehensive player performance statistics from NFL official box scores
+ * Matches the nflverse `stats_player` release schema (nflfastR::calculate_stats),
+ * which aims to match NFL official box scores and season summaries.
  *
- * Note: This dataset aims to match NFL official box scores and season summaries.
- * The dataset includes 114+ columns covering all aspects of player performance.
+ * Week/game fields (week, season_type, game_id, opponent_team) are only present
+ * in week-level files; season-level files (reg, post, reg+post) omit them.
  */
 export interface PlayerStatsRecord {
   // ===== IDENTIFIERS =====
@@ -29,15 +30,21 @@ export interface PlayerStatsRecord {
   position: Position | null;
   /** Position group (QB, RB, WR, TE, etc.) */
   position_group: string | null;
+  /** Player headshot image URL */
+  headshot_url: string | null;
 
   // ===== GAME INFO =====
   /** Season year */
   season: Season;
-  /** Game week number (null for season totals) */
+  /** Game week number (week-level files only) */
   week: Week | null;
+  /** Season type (REG/POST; week-level files only) */
+  season_type: string | null;
+  /** Game identifier (week-level files only) */
+  game_id: string | null;
   /** Player's team abbreviation */
   team: TeamAbbr;
-  /** Opposing team abbreviation */
+  /** Opposing team abbreviation (week-level files only) */
   opponent_team: TeamAbbr | null;
 
   // ===== PASSING STATS =====
@@ -63,10 +70,16 @@ export interface PlayerStatsRecord {
   sacks_suffered: number | null;
   /** Sack yards lost */
   sack_yards_lost: number | null;
+  /** Fumbles on sacks */
+  sack_fumbles: number | null;
+  /** Fumbles lost on sacks */
+  sack_fumbles_lost: number | null;
   /** Passing first downs */
   passing_first_downs: number | null;
   /** Passing two point conversion attempts */
   passing_2pt_conversions: number | null;
+  /** Passing Air Conversion Ratio */
+  pacr: number | null;
 
   // ===== RUSHING STATS =====
   /** Number of official rush attempts */
@@ -105,6 +118,10 @@ export interface PlayerStatsRecord {
   racr: number | null;
   /** Target share (targets / team pass attempts) */
   target_share: number | null;
+  /** Air yards share (receiving air yards / team air yards) */
+  air_yards_share: number | null;
+  /** Weighted Opportunity Rating */
+  wopr: number | null;
   /** Receiving fumbles */
   receiving_fumbles: number | null;
   /** Receiving fumbles lost */
@@ -119,32 +136,60 @@ export interface PlayerStatsRecord {
   def_tackles_solo: number | null;
   /** Tackles with assists */
   def_tackles_with_assist: number | null;
-  /** Combined tackles (solo + assists) */
-  def_tackles_combined: number | null;
+  /** Assists on tackles */
+  def_tackle_assists: number | null;
   /** Tackles for loss */
   def_tackles_for_loss: number | null;
+  /** Tackles for loss yards */
+  def_tackles_for_loss_yards: number | null;
+  /** Fumbles forced */
+  def_fumbles_forced: number | null;
   /** Sacks */
   def_sacks: number | null;
+  /** Sack yards */
+  def_sack_yards: number | null;
   /** Quarterback hits */
   def_qb_hits: number | null;
   /** Interceptions */
   def_interceptions: number | null;
   /** Interception yards */
   def_interception_yards: number | null;
-  /** Interception touchdowns */
-  def_interception_tds: number | null;
   /** Passes defended */
   def_pass_defended: number | null;
-  /** Fumbles forced */
-  def_fumbles_forced: number | null;
-  /** Fumble recoveries */
-  def_fumble_recoveries: number | null;
-  /** Fumble recovery yards */
-  def_fumble_recovery_yards: number | null;
-  /** Fumble recovery touchdowns */
-  def_fumble_recovery_tds: number | null;
+  /** Defensive touchdowns */
+  def_tds: number | null;
+  /** Defensive fumbles */
+  def_fumbles: number | null;
   /** Safeties */
   def_safeties: number | null;
+
+  // ===== FUMBLE / MISC STATS =====
+  /** Miscellaneous yards */
+  misc_yards: number | null;
+  /** Own fumbles recovered */
+  fumble_recovery_own: number | null;
+  /** Own fumble recovery yards */
+  fumble_recovery_yards_own: number | null;
+  /** Opponent fumbles recovered */
+  fumble_recovery_opp: number | null;
+  /** Opponent fumble recovery yards */
+  fumble_recovery_yards_opp: number | null;
+  /** Fumble recovery touchdowns */
+  fumble_recovery_tds: number | null;
+  /** Penalties committed */
+  penalties: number | null;
+  /** Penalty yards */
+  penalty_yards: number | null;
+
+  // ===== RETURN STATS =====
+  /** Punt returns */
+  punt_returns: number | null;
+  /** Punt return yards */
+  punt_return_yards: number | null;
+  /** Kickoff returns */
+  kickoff_returns: number | null;
+  /** Kickoff return yards */
+  kickoff_return_yards: number | null;
 
   // ===== KICKING STATS =====
   /** Field goals made */
@@ -153,10 +198,12 @@ export interface PlayerStatsRecord {
   fg_att: number | null;
   /** Field goal misses */
   fg_missed: number | null;
-  /** Field goal percentage */
-  fg_pct: number | null;
   /** Field goals blocked */
   fg_blocked: number | null;
+  /** Longest field goal made */
+  fg_long: number | null;
+  /** Field goal percentage */
+  fg_pct: number | null;
   /** Field goals made from 0-19 yards */
   fg_made_0_19: number | null;
   /** Field goals made from 20-29 yards */
@@ -165,10 +212,34 @@ export interface PlayerStatsRecord {
   fg_made_30_39: number | null;
   /** Field goals made from 40-49 yards */
   fg_made_40_49: number | null;
-  /** Field goals made from 50+ yards */
+  /** Field goals made from 50-59 yards */
   fg_made_50_59: number | null;
   /** Field goals made from 60+ yards */
-  fg_made_60_plus: number | null;
+  fg_made_60_: number | null;
+  /** Field goals missed from 0-19 yards */
+  fg_missed_0_19: number | null;
+  /** Field goals missed from 20-29 yards */
+  fg_missed_20_29: number | null;
+  /** Field goals missed from 30-39 yards */
+  fg_missed_30_39: number | null;
+  /** Field goals missed from 40-49 yards */
+  fg_missed_40_49: number | null;
+  /** Field goals missed from 50-59 yards */
+  fg_missed_50_59: number | null;
+  /** Field goals missed from 60+ yards */
+  fg_missed_60_: number | null;
+  /** Distances of field goals made (semicolon-separated list) */
+  fg_made_list: string | null;
+  /** Distances of field goals missed (semicolon-separated list) */
+  fg_missed_list: string | null;
+  /** Distances of field goals blocked (semicolon-separated list) */
+  fg_blocked_list: string | null;
+  /** Total distance of field goals made */
+  fg_made_distance: number | null;
+  /** Total distance of field goals missed */
+  fg_missed_distance: number | null;
+  /** Total distance of field goals blocked */
+  fg_blocked_distance: number | null;
   /** Extra points made */
   pat_made: number | null;
   /** Extra point attempts */
@@ -177,6 +248,22 @@ export interface PlayerStatsRecord {
   pat_missed: number | null;
   /** Extra points blocked */
   pat_blocked: number | null;
+  /** Extra point percentage */
+  pat_pct: number | null;
+  /** Game-winning field goals made */
+  gwfg_made: number | null;
+  /** Game-winning field goal attempts */
+  gwfg_att: number | null;
+  /** Game-winning field goals missed */
+  gwfg_missed: number | null;
+  /** Game-winning field goals blocked */
+  gwfg_blocked: number | null;
+  /** Game-winning field goal distance */
+  gwfg_distance: number | null;
+
+  // ===== SPECIAL TEAMS =====
+  /** Special teams touchdowns */
+  special_teams_tds: number | null;
 
   // ===== FANTASY STATS =====
   /** Standard fantasy points */
@@ -184,12 +271,8 @@ export interface PlayerStatsRecord {
   /** PPR (Point Per Reception) fantasy points */
   fantasy_points_ppr: number | null;
 
-  // ===== SPECIAL TEAMS =====
-  /** Special teams tackles */
-  special_teams_tds: number | null;
-
   // ===== ADDITIONAL FIELDS =====
-  /** Allow for additional fields from the 114+ column dataset */
+  /** Allow for additional fields as the dataset evolves */
   [key: string]: string | number | null | undefined;
 }
 
@@ -205,7 +288,7 @@ export interface LoadPlayerStatsOptions {
   /** File format to load (csv or parquet) */
   format?: 'csv' | 'parquet';
   /**
-   * Summary level for aggregation:
+   * Summary level - selects which pre-aggregated nflverse file is downloaded:
    * - 'week': Week-by-week stats (default)
    * - 'reg': Regular season totals
    * - 'post': Postseason totals

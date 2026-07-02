@@ -50,17 +50,25 @@ describe('loadSchedules', () => {
     mockParseParquet.mockClear();
   });
 
+  // All seasons live in a single games file; loaders fetch once and filter
+  const allSeasonsCsv = [
+    'game_id,season,game_type,week,gameday,away_team,home_team',
+    '2022_01_BUF_LAR,2022,REG,1,2022-09-08,BUF,LAR',
+    '2023_01_DET_KC,2023,REG,1,2023-09-07,DET,KC',
+    '2024_01_KC_BAL,2024,REG,1,2024-09-05,KC,BAL',
+  ].join('\n');
+
+  const allSeasonsResponse = {
+    data: allSeasonsCsv,
+    status: 200,
+    headers: { 'content-type': 'text/csv' },
+    fromCache: false,
+    url: 'test-url',
+  };
+
   describe('season normalization', () => {
     it('should load current season when no seasons provided', async () => {
-      const mockResponse = {
-        data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2024_01_KC_BAL,2024,REG,1,2024-09-05,KC,BAL',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+      mockGet.mockResolvedValue(allSeasonsResponse);
 
       const result = await loadSchedules();
 
@@ -71,21 +79,13 @@ describe('loadSchedules', () => {
       expect(result.value[0]?.season).toBe(2024);
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('sched_2024.csv'),
+        expect.stringContaining('games.csv'),
         expect.any(Object)
       );
     });
 
     it('should load specific season', async () => {
-      const mockResponse = {
-        data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2023_01_DET_KC,2023,REG,1,2023-09-07,DET,KC',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+      mockGet.mockResolvedValue(allSeasonsResponse);
 
       const result = await loadSchedules(2023);
 
@@ -95,29 +95,13 @@ describe('loadSchedules', () => {
       expect(result.value[0]?.game_id).toBe('2023_01_DET_KC');
       expect(result.value[0]?.season).toBe(2023);
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('sched_2023.csv'),
+        expect.stringContaining('games.csv'),
         expect.any(Object)
       );
     });
 
-    it('should load multiple seasons', async () => {
-      const mockResponse2022 = {
-        data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2022_01_BUF_LAR,2022,REG,1,2022-09-08,BUF,LAR',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      const mockResponse2023 = {
-        data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2023_01_DET_KC,2023,REG,1,2023-09-07,DET,KC',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValueOnce(mockResponse2022).mockResolvedValueOnce(mockResponse2023);
+    it('should load multiple seasons from the single games file', async () => {
+      mockGet.mockResolvedValue(allSeasonsResponse);
 
       const result = await loadSchedules([2022, 2023]);
 
@@ -126,27 +110,18 @@ describe('loadSchedules', () => {
       expect(result.value).toHaveLength(2);
       expect(result.value[0]?.season).toBe(2022);
       expect(result.value[1]?.season).toBe(2023);
-      expect(mockGet).toHaveBeenCalledTimes(2);
+      expect(mockGet).toHaveBeenCalledTimes(1);
     });
 
-    it('should load all seasons when true is passed', async () => {
-      const mockResponse = {
-        data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2020_01_HOU_KC,2020,REG,1,2020-09-10,HOU,KC',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
+    it('should return the full file when true is passed', async () => {
+      mockGet.mockResolvedValue(allSeasonsResponse);
 
       const result = await loadSchedules(true);
 
       expect(result.ok).toBe(true);
-      // Should load from 1999 to 2024 (26 seasons)
-      expect(mockGet).toHaveBeenCalled();
-      const callCount = mockGet.mock.calls.length;
-      expect(callCount).toBe(2024 - 1999 + 1); // 26 seasons
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(3);
+      expect(mockGet).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -289,10 +264,18 @@ describe('loadSchedules', () => {
     });
   });
 
-  describe('parallel fetching', () => {
-    it('should fetch multiple seasons in parallel', async () => {
+  describe('season filtering', () => {
+    it('should filter multi-game seasons correctly from the single file', async () => {
       const mockResponse = {
-        data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2020_01_HOU_KC,2020,REG,1,2020-09-10,HOU,KC',
+        data: [
+          'game_id,season,game_type,week,gameday,away_team,home_team',
+          '2021_01_TB_DAL,2021,REG,1,2021-09-09,TB,DAL',
+          '2021_01_PIT_BUF,2021,REG,1,2021-09-12,PIT,BUF',
+          '2022_01_BUF_LAR,2022,REG,1,2022-09-08,BUF,LAR',
+          '2022_01_NO_ATL,2022,REG,1,2022-09-11,NO,ATL',
+          '2022_01_CLE_CAR,2022,REG,1,2022-09-11,CLE,CAR',
+          '2023_01_DET_KC,2023,REG,1,2023-09-07,DET,KC',
+        ].join('\n'),
         status: 200,
         headers: { 'content-type': 'text/csv' },
         fromCache: false,
@@ -301,48 +284,15 @@ describe('loadSchedules', () => {
 
       mockGet.mockResolvedValue(mockResponse);
 
-      const startTime = Date.now();
-      const result = await loadSchedules([2020, 2021, 2022]);
-      const endTime = Date.now();
-
-      expect(result.ok).toBe(true);
-      // Should be called 3 times (once per season)
-      expect(mockGet).toHaveBeenCalledTimes(3);
-
-      // Parallel execution should be faster than sequential
-      // (though this is a mock, we're verifying Promise.all is used)
-      expect(endTime - startTime).toBeLessThan(1000);
-    });
-  });
-
-  describe('data concatenation', () => {
-    it('should concatenate multiple season datasets efficiently', async () => {
-      const mockResponse2021 = {
-        data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2021_01_TB_DAL,2021,REG,1,2021-09-09,TB,DAL\n2021_01_PIT_BUF,2021,REG,1,2021-09-12,PIT,BUF',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      const mockResponse2022 = {
-        data: 'game_id,season,game_type,week,gameday,away_team,home_team\n2022_01_BUF_LAR,2022,REG,1,2022-09-08,BUF,LAR\n2022_01_NO_ATL,2022,REG,1,2022-09-11,NO,ATL\n2022_01_CLE_CAR,2022,REG,1,2022-09-11,CLE,CAR',
-        status: 200,
-        headers: { 'content-type': 'text/csv' },
-        fromCache: false,
-        url: 'test-url',
-      };
-
-      mockGet.mockResolvedValueOnce(mockResponse2021).mockResolvedValueOnce(mockResponse2022);
-
       const result = await loadSchedules([2021, 2022]);
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      // Should have 2 games from 2021 + 3 games from 2022 = 5 total
+      // 2 games from 2021 + 3 games from 2022 = 5 total; 2023 excluded
       expect(result.value).toHaveLength(5);
       expect(result.value[0]?.season).toBe(2021);
       expect(result.value[2]?.season).toBe(2022);
+      expect(mockGet).toHaveBeenCalledTimes(1);
     });
   });
 

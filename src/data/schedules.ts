@@ -107,10 +107,10 @@ export async function loadSchedules(
       return Err(validationResult.error!);
     }
 
-    // Build URLs for all seasons
-    const urls = seasonsToLoad.map((season) => buildScheduleUrl(season, format));
+    // All seasons live in a single games file; fetch once and filter
+    const url = buildScheduleUrl(format);
+    getLogger().debug(`Fetching schedule data from: ${url}`);
 
-    // Fetch all seasons in parallel
     const config = getConfig();
     const client = new HttpClient({
       timeout: config.http.timeout,
@@ -119,44 +119,25 @@ export async function loadSchedules(
       cacheTtl: config.cache.ttl,
       debug: config.logging.debug,
     });
-    const datasets: ScheduleRecord[][] = [];
 
-    const fetchPromises = urls.map(async (url) => {
-      getLogger().debug(`Fetching schedule data from: ${url}`);
+    const response = await client.get(url, loadOptions);
 
-      const response = await client.get(url, loadOptions);
-
-      // Parse based on format
-      if (format === 'parquet') {
-        const buffer = response.data as ArrayBuffer;
-        return parseParquet<ScheduleRecord>(buffer);
-      } else {
-        const csvString =
-          typeof response.data === 'string'
-            ? response.data
-            : new TextDecoder().decode(response.data as ArrayBuffer);
-        const parseResult = parseCsv<ScheduleRecord>(csvString);
-        return parseResult.data;
-      }
-    });
-
-    const results = await Promise.all(fetchPromises);
-    datasets.push(...results);
-
-    getLogger().debug(`Received ${datasets.length} datasets`);
-
-    // Pre-allocate result array for better performance
-    const totalRows = datasets.reduce((sum, data) => sum + data.length, 0);
-    const result: ScheduleRecord[] = new Array<ScheduleRecord>(totalRows);
-
-    // Concatenate all datasets efficiently
-    let offset = 0;
-    for (const data of datasets) {
-      for (let i = 0; i < data.length; i++) {
-        result[offset + i] = data[i]!;
-      }
-      offset += data.length;
+    let allGames: ScheduleRecord[];
+    if (format === 'parquet') {
+      const buffer = response.data as ArrayBuffer;
+      allGames = await parseParquet<ScheduleRecord>(buffer);
+    } else {
+      const csvString =
+        typeof response.data === 'string'
+          ? response.data
+          : new TextDecoder().decode(response.data as ArrayBuffer);
+      const parseResult = parseCsv<ScheduleRecord>(csvString);
+      allGames = parseResult.data;
     }
+
+    // `true` means every available season - return the full file unfiltered
+    const result =
+      seasons === true ? allGames : allGames.filter((game) => seasonsToLoad.includes(game.season));
 
     getLogger().info(`Loaded ${result.length} schedule records`);
 

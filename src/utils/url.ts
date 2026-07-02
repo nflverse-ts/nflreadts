@@ -6,26 +6,35 @@
 import { getConfig } from '../config/manager.js';
 
 import type { Season } from '../types/common.js';
+import type { SummaryLevel } from '../types/player-stats.js';
 
 /**
  * Data file types available from nflverse
+ * Each value is a release tag in the nflverse-data GitHub repository
  */
 export type DataFileType =
   | 'pbp' // Play-by-play
-  | 'player_stats' // Player statistics
-  | 'rosters' // Team rosters
-  | 'schedules' // Game schedules
+  | 'stats_player' // Player statistics (current, nflfastR::calculate_stats)
+  | 'stats_team' // Team statistics (current, nflfastR::calculate_stats)
+  | 'player_stats' // Player statistics (LEGACY release, frozen since 2025)
+  | 'rosters' // Season-level team rosters
+  | 'weekly_rosters' // Week-level team rosters
+  | 'schedules' // Game schedules (Lee Sharpe games file)
   | 'teams' // Team information
   | 'players' // Player information
-  | 'participation' // Participation data
+  | 'pbp_participation' // Play participation data
   | 'depth_charts' // Depth charts
   | 'injuries' // Injury reports
   | 'draft_picks' // Draft picks
-  | 'contracts' // Player contracts
+  | 'combine' // Combine results
+  | 'contracts' // Player contracts (OTC)
   | 'nextgen_stats' // Next Gen Stats
-  | 'qbr' // ESPN QBR
-  | 'pfr' // Pro Football Reference data
-  | 'snap_counts'; // Snap counts
+  | 'espn_data' // ESPN data (QBR)
+  | 'pfr_advstats' // Pro Football Reference advanced stats
+  | 'snap_counts' // Snap counts
+  | 'officials' // Game officials
+  | 'trades' // Trades
+  | 'ftn_charting'; // FTN charting data
 
 /**
  * File format for data downloads
@@ -76,20 +85,71 @@ export function buildPbpUrl(season: Season, format: FileFormat = 'csv'): string 
 }
 
 /**
+ * Summary levels for player/team stats files
+ * Maps to the pre-aggregated files nflverse publishes ('reg+post' -> 'regpost' in filenames)
+ */
+export type StatsSummaryLevel = SummaryLevel;
+
+function statsLevelToken(summaryLevel: StatsSummaryLevel): string {
+  return summaryLevel === 'reg+post' ? 'regpost' : summaryLevel;
+}
+
+/**
  * Build URL for player stats
  *
+ * Targets the current `stats_player` release (nflfastR::calculate_stats output).
+ * Files are pre-aggregated per summary level.
+ *
  * @param season - NFL season year
+ * @param summaryLevel - Aggregation level ('week', 'reg', 'post', 'reg+post')
  * @param format - File format (csv, parquet, rds, json)
  * @returns URL to the player stats data file
  *
  * @example
  * ```typescript
- * buildPlayerStatsUrl(2023);
- * // Returns URL for 2023 player stats in CSV format
+ * buildPlayerStatsUrl(2023, 'week');
+ * // Returns URL for 2023 weekly player stats in CSV format
  * ```
  */
-export function buildPlayerStatsUrl(season: Season, format: FileFormat = 'csv'): string {
-  return buildNflverseUrl('player_stats', `player_stats_${season}`, format);
+export function buildPlayerStatsUrl(
+  season: Season,
+  summaryLevel: StatsSummaryLevel = 'week',
+  format: FileFormat = 'csv'
+): string {
+  return buildNflverseUrl(
+    'stats_player',
+    `stats_player_${statsLevelToken(summaryLevel)}_${season}`,
+    format
+  );
+}
+
+/**
+ * Build URL for team stats
+ *
+ * Targets the `stats_team` release (nflfastR::calculate_stats output).
+ * Files are pre-aggregated per summary level.
+ *
+ * @param season - NFL season year
+ * @param summaryLevel - Aggregation level ('week', 'reg', 'post', 'reg+post')
+ * @param format - File format (csv, parquet, rds, json)
+ * @returns URL to the team stats data file
+ *
+ * @example
+ * ```typescript
+ * buildTeamStatsUrl(2023, 'reg');
+ * // Returns URL for 2023 regular-season team stats in CSV format
+ * ```
+ */
+export function buildTeamStatsUrl(
+  season: Season,
+  summaryLevel: StatsSummaryLevel = 'week',
+  format: FileFormat = 'csv'
+): string {
+  return buildNflverseUrl(
+    'stats_team',
+    `stats_team_${statsLevelToken(summaryLevel)}_${season}`,
+    format
+  );
 }
 
 /**
@@ -123,24 +183,26 @@ export function buildRosterUrl(season: Season, format: FileFormat = 'csv'): stri
  * ```
  */
 export function buildWeeklyRosterUrl(season: Season, format: FileFormat = 'csv'): string {
-  return buildNflverseUrl('rosters', `roster_weekly_${season}`, format);
+  return buildNflverseUrl('weekly_rosters', `roster_weekly_${season}`, format);
 }
 
 /**
  * Build URL for schedule data
  *
- * @param season - NFL season year
+ * All seasons live in a single `games` file (maintained by Lee Sharpe);
+ * loaders filter to requested seasons after download.
+ *
  * @param format - File format (csv, parquet, rds, json)
- * @returns URL to the schedule data file
+ * @returns URL to the schedules (games) data file
  *
  * @example
  * ```typescript
- * buildScheduleUrl(2023);
- * // Returns URL for 2023 schedule data
+ * buildScheduleUrl();
+ * // Returns: 'https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv'
  * ```
  */
-export function buildScheduleUrl(season: Season, format: FileFormat = 'csv'): string {
-  return buildNflverseUrl('schedules', `sched_${season}`, format);
+export function buildScheduleUrl(format: FileFormat = 'csv'): string {
+  return buildNflverseUrl('schedules', 'games', format);
 }
 
 /**
@@ -152,11 +214,11 @@ export function buildScheduleUrl(season: Season, format: FileFormat = 'csv'): st
  * @example
  * ```typescript
  * buildTeamsUrl('csv');
- * // Returns URL for teams data in CSV format
+ * // Returns URL for teams_colors_logos data in CSV format
  * ```
  */
 export function buildTeamsUrl(format: FileFormat = 'csv'): string {
-  return buildNflverseUrl('teams', 'teams', format);
+  return buildNflverseUrl('teams', 'teams_colors_logos', format);
 }
 
 /**
@@ -189,7 +251,7 @@ export function buildPlayersUrl(format: FileFormat = 'csv'): string {
  * ```
  */
 export function buildParticipationUrl(season: Season, format: FileFormat = 'csv'): string {
-  return buildNflverseUrl('participation', `participation_${season}`, format);
+  return buildNflverseUrl('pbp_participation', `pbp_participation_${season}`, format);
 }
 
 /**

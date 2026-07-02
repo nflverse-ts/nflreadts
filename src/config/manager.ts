@@ -40,6 +40,12 @@ function deepMerge(target: NflReadConfig, source: PartialNflReadConfig): NflRead
 /**
  * Configuration manager class
  * Follows the Singleton pattern to ensure consistent config across the application
+ *
+ * @example
+ * ```typescript
+ * const manager = ConfigManager.getInstance({ http: { timeout: 5000 } });
+ * const config = manager.getConfig();
+ * ```
  */
 export class ConfigManager {
   private static instance: ConfigManager | null = null;
@@ -47,6 +53,8 @@ export class ConfigManager {
 
   /**
    * Private constructor to enforce singleton pattern
+   * @private
+   * @param userConfig - Optional user configuration to merge with defaults
    */
   private constructor(userConfig?: PartialNflReadConfig) {
     const env = detectEnvironment();
@@ -64,6 +72,17 @@ export class ConfigManager {
 
   /**
    * Get the singleton instance
+   * Creates new instance on first call, reuses on subsequent calls
+   *
+   * @param userConfig - Optional user configuration (only used on first call or to update)
+   * @returns ConfigManager singleton instance
+   *
+   * @example
+   * ```typescript
+   * const manager = ConfigManager.getInstance();
+   * // Or with custom config:
+   * const manager = ConfigManager.getInstance({ cache: { enabled: false } });
+   * ```
    */
   public static getInstance(userConfig?: PartialNflReadConfig): ConfigManager {
     if (!ConfigManager.instance) {
@@ -77,6 +96,12 @@ export class ConfigManager {
 
   /**
    * Reset the singleton instance (useful for testing)
+   *
+   * @example
+   * ```typescript
+   * // In test teardown
+   * ConfigManager.reset();
+   * ```
    */
   public static reset(): void {
     ConfigManager.instance = null;
@@ -84,6 +109,15 @@ export class ConfigManager {
 
   /**
    * Get the current configuration
+   * Returns a readonly copy to prevent accidental mutations
+   *
+   * @returns Current configuration (readonly)
+   *
+   * @example
+   * ```typescript
+   * const config = manager.getConfig();
+   * console.log(config.http.timeout);
+   * ```
    */
   public getConfig(): Readonly<NflReadConfig> {
     return this.config;
@@ -109,6 +143,14 @@ export class ConfigManager {
 
   /**
    * Update configuration with new values
+   * Merges new values with existing configuration
+   *
+   * @param userConfig - Partial configuration to merge
+   *
+   * @example
+   * ```typescript
+   * manager.update({ logging: { debug: true } });
+   * ```
    */
   public update(userConfig: PartialNflReadConfig): void {
     this.config = deepMerge(this.config, userConfig);
@@ -116,6 +158,12 @@ export class ConfigManager {
 
   /**
    * Reset configuration to defaults (with environment-specific overrides)
+   * Clears all user customizations
+   *
+   * @example
+   * ```typescript
+   * manager.resetToDefaults(); // Back to original defaults
+   * ```
    */
   public resetToDefaults(): void {
     const env = detectEnvironment();
@@ -126,6 +174,16 @@ export class ConfigManager {
 
 /**
  * Convenience function to get the current configuration
+ * Shortcut for ConfigManager.getInstance().getConfig()
+ *
+ * @returns Current configuration (readonly)
+ *
+ * @example
+ * ```typescript
+ * import { getConfig } from './config';
+ * const config = getConfig();
+ * console.log(config.http.timeout);
+ * ```
  */
 export function getConfig(): Readonly<NflReadConfig> {
   return ConfigManager.getInstance().getConfig();
@@ -133,6 +191,18 @@ export function getConfig(): Readonly<NflReadConfig> {
 
 /**
  * Convenience function to configure nflreadts
+ * Shortcut for ConfigManager.getInstance(config)
+ *
+ * @param userConfig - User configuration to apply
+ *
+ * @example
+ * ```typescript
+ * import { configure } from './config';
+ * configure({
+ *   http: { timeout: 10000 },
+ *   cache: { enabled: true, ttl: 300000 }
+ * });
+ * ```
  */
 export function configure(userConfig: PartialNflReadConfig): void {
   ConfigManager.getInstance(userConfig);

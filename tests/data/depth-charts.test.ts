@@ -47,8 +47,10 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts();
 
-      expect(result).toHaveLength(1);
-      expect(result[0].player_name).toBe('Patrick Mahomes');
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0].player_name).toBe('Patrick Mahomes');
       expect(mockGet).toHaveBeenCalledTimes(1);
       expect(mockGet).toHaveBeenCalledWith(
         expect.stringContaining('depth_charts_2024.csv'),
@@ -69,8 +71,10 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts(2023);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].player_name).toBe('Josh Allen');
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0].player_name).toBe('Josh Allen');
       expect(mockGet).toHaveBeenCalledWith(
         expect.stringContaining('depth_charts_2023.csv'),
         expect.any(Object)
@@ -98,7 +102,9 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts([2022, 2023]);
 
-      expect(result).toHaveLength(2);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(2);
       expect(mockGet).toHaveBeenCalledTimes(2);
       expect(mockGet).toHaveBeenCalledWith(
         expect.stringContaining('depth_charts_2022.csv'),
@@ -138,17 +144,26 @@ describe('loadDepthCharts', () => {
 
   describe('validation', () => {
     it('should reject seasons before 2001', async () => {
-      await expect(loadDepthCharts(2000)).rejects.toThrow(ValidationError);
-      await expect(loadDepthCharts(2000)).rejects.toThrow('before the minimum season');
+      const result = await loadDepthCharts(2000);
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toBeInstanceOf(ValidationError);
+      expect(result.error.message).toContain('before the minimum season');
     });
 
     it('should reject future seasons', async () => {
-      await expect(loadDepthCharts(2025)).rejects.toThrow(ValidationError);
-      await expect(loadDepthCharts(2025)).rejects.toThrow('in the future');
+      const result = await loadDepthCharts(2025);
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toBeInstanceOf(ValidationError);
+      expect(result.error.message).toContain('in the future');
     });
 
     it('should reject invalid season in array', async () => {
-      await expect(loadDepthCharts([2023, 2025])).rejects.toThrow(ValidationError);
+      const result = await loadDepthCharts([2023, 2025]);
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toBeInstanceOf(ValidationError);
     });
 
     it('should accept 2001 (minimum valid season)', async () => {
@@ -164,8 +179,12 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts(2001);
 
-      expect(result).toHaveLength(1);
-      expect((result[0]!.dt as unknown as Date).toISOString()).toBe('2001-09-09T12:00:00.000Z');
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      expect((result.value[0]!.dt as unknown as Date).toISOString()).toBe(
+        '2001-09-09T12:00:00.000Z'
+      );
     });
 
     it('should accept current season (maximum valid season)', async () => {
@@ -181,8 +200,12 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts(2024);
 
-      expect(result).toHaveLength(1);
-      expect((result[0]!.dt as unknown as Date).toISOString()).toBe('2024-09-05T12:00:00.000Z');
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      expect((result.value[0]!.dt as unknown as Date).toISOString()).toBe(
+        '2024-09-05T12:00:00.000Z'
+      );
     });
   });
 
@@ -241,9 +264,11 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts(2023);
 
-      expect(result).toHaveLength(1);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
 
-      const entry = result[0]!;
+      const entry = result.value[0]!;
       // dt is parsed as Date object by CSV parser with dynamicTyping
       expect(entry.dt).toBeInstanceOf(Date);
       expect((entry.dt as unknown as Date).toISOString()).toBe('2023-09-07T12:00:00.000Z');
@@ -270,10 +295,12 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts(2023);
 
-      expect(result).toHaveLength(3);
-      expect(result[0]!.player_name).toBe('Patrick Mahomes');
-      expect(result[1]!.player_name).toBe('Travis Kelce');
-      expect(result[2]!.player_name).toBe('Chad Henne');
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(3);
+      expect(result.value[0]!.player_name).toBe('Patrick Mahomes');
+      expect(result.value[1]!.player_name).toBe('Travis Kelce');
+      expect(result.value[2]!.player_name).toBe('Chad Henne');
     });
 
     it('should handle null values correctly', async () => {
@@ -292,8 +319,10 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts(2023);
 
-      expect(result).toHaveLength(1);
-      const entry = result[0]!;
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      const entry = result.value[0]!;
       expect(entry.espn_id).toBeNull();
       expect(entry.gsis_id).toBeNull();
     });
@@ -342,13 +371,15 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts([2022, 2023]);
 
-      expect(result).toHaveLength(5);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(5);
 
       // Check timestamps to determine which year
-      const dt2022Count = result.filter(
+      const dt2022Count = result.value.filter(
         (r) => (r.dt as unknown as Date).getFullYear() === 2022
       ).length;
-      const dt2023Count = result.filter(
+      const dt2023Count = result.value.filter(
         (r) => (r.dt as unknown as Date).getFullYear() === 2023
       ).length;
       expect(dt2022Count).toBe(2);
@@ -368,7 +399,9 @@ describe('loadDepthCharts', () => {
 
       const result = await loadDepthCharts(2023);
 
-      expect(result).toHaveLength(0);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(0);
     });
   });
 

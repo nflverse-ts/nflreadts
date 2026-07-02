@@ -1,106 +1,129 @@
 /**
- * Team-related type definitions
+ * Team data loading types
  * @module types/team
  */
 
 import type { Conference, Division, TeamAbbr } from './common.js';
-import type { HISTORICAL_TEAMS, NFL_TEAMS } from './constants.js';
+import type { LoadOptions } from './utils.js';
 
 /**
- * NFL Team information
+ * Any team abbreviation including current and historical teams
+ * Includes relocated/renamed teams like 'SD', 'STL', 'OAK'
  */
-export interface Team {
+export type AnyTeamAbbr = string;
+
+/**
+ * Team record with comprehensive metadata, logos, and branding
+ *
+ * This interface matches the nflreadr::load_teams() output structure
+ * Useful for plots and team-based visualizations
+ *
+ * @see https://nflreadr.nflverse.com/reference/load_teams.html
+ */
+export interface TeamRecord {
   /**
-   * Team abbreviation (e.g., "KC", "PHI")
+   * Team abbreviation (standardized)
+   * @example "KC"
    */
   team_abbr: TeamAbbr;
 
   /**
-   * Full team name (e.g., "Kansas City Chiefs")
+   * Full team name
+   * @example "Kansas City Chiefs"
    */
   team_name: string;
 
   /**
-   * Team city/location (e.g., "Kansas City")
+   * Numeric team identifier
    */
-  team_location: string;
+  team_id: number;
 
   /**
-   * Team nickname (e.g., "Chiefs")
+   * Team nickname
+   * @example "Chiefs"
    */
   team_nick: string;
 
   /**
-   * Conference (AFC or NFC)
+   * Conference assignment
    */
   team_conf: Conference;
 
   /**
-   * Division (East, West, North, South)
+   * Division assignment
    */
   team_division: Division;
 
   /**
    * Primary team color (hex code)
+   * @example "#E31837"
    */
   team_color: string;
 
   /**
    * Secondary team color (hex code)
+   * @example "#FFB81C"
    */
-  team_color2?: string;
+  team_color2: string;
 
   /**
-   * Team logo URL
+   * Tertiary team color (hex code)
+   * May be null if not applicable
    */
-  team_logo_espn?: string;
+  team_color3: string | null;
 
   /**
-   * Team logo square URL
+   * Quaternary team color (hex code)
+   * May be null if not applicable
    */
-  team_logo_square?: string;
+  team_color4: string | null;
+
+  /**
+   * Wikipedia logo URL
+   */
+  team_logo_wikipedia: string;
+
+  /**
+   * ESPN logo URL
+   */
+  team_logo_espn: string;
 
   /**
    * Team wordmark URL
    */
-  team_wordmark?: string;
+  team_wordmark: string;
 
   /**
-   * Stadium name
+   * Conference logo URL
    */
-  stadium?: string;
+  team_conference_logo: string;
 
   /**
-   * Stadium location
+   * NFL league logo URL
    */
-  stadium_location?: string;
+  team_league_logo: string;
+
+  /**
+   * Square format team logo URL
+   */
+  team_logo_squared: string;
 }
 
 /**
- * Mapping of team abbreviations to full names
+ * Options for loading team data
  */
-export type TeamMap = Record<TeamAbbr, string>;
+export interface LoadTeamsOptions extends LoadOptions {
+  /**
+   * File format to use
+   * @default 'csv'
+   */
+  format?: 'csv' | 'parquet';
 
-/**
- * Team colors
- */
-export interface TeamColors {
-  primary: string;
-  secondary?: string;
-  tertiary?: string;
+  /**
+   * Filter for current/active teams only
+   * When true, returns only current NFL teams with standard abbreviations
+   * When false, includes historical teams and non-standard abbreviations
+   * @default true
+   */
+  current?: boolean;
 }
-
-/**
- * Type for valid NFL team abbreviations
- */
-export type ValidTeamAbbr = (typeof NFL_TEAMS)[number];
-
-/**
- * Type for historical team abbreviations
- */
-export type HistoricalTeamAbbr = (typeof HISTORICAL_TEAMS)[number];
-
-/**
- * All valid team abbreviations (current + historical)
- */
-export type AnyTeamAbbr = ValidTeamAbbr | HistoricalTeamAbbr;

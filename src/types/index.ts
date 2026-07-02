@@ -13,6 +13,8 @@ export type { PlayByPlayRecord } from './pbp.js';
 export type { PlayerStatsRecord } from './player-stats.js';
 export type { PlayerRecord } from './player.js';
 export type { RosterRecord } from './roster.js';
+export type { ScheduleRecord } from './schedule.js';
+export type { TeamRecord } from './team.js';
 
 // ============================================================================
 // OPTIONS TYPES - Parameters for data loading functions
@@ -24,6 +26,8 @@ export type { LoadPbpOptions } from './pbp.js';
 export type { LoadPlayerStatsOptions } from './player-stats.js';
 export type { LoadPlayersOptions } from './player.js';
 export type { LoadRostersOptions } from './roster.js';
+export type { LoadSchedulesOptions } from './schedule.js';
+export type { LoadTeamsOptions } from './team.js';
 export type { LoadOptions } from './utils.js';
 
 // ============================================================================
@@ -58,3 +62,10 @@ export {
   TimeoutError,
   ValidationError,
 } from './error.js';
+
+// ============================================================================
+// RESULT TYPE - Functional error handling
+// ============================================================================
+
+export type { Result } from './error.js';
+export { Err, Ok, isErr, isOk, mapError, mapResult, unwrap, unwrapOr } from './error.js';

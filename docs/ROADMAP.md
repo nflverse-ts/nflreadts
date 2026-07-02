@@ -1,7 +1,7 @@
 # nflreadts Development Roadmap
 
-> **Last Updated**: January 28 2025
-> **Status**: Phase 3 Complete - Roster and Player Data
+> **Last Updated**: November 13 2025
+> **Status**: Phase 4 Complete - Schedule Data | Phase 5 In Progress - Performance Optimization
 
 This roadmap outlines the development plan for nflreadts, the TypeScript port of nflreadpy/nflreadr.
 
@@ -16,6 +16,104 @@ Bring the power of nflverse data tools to the TypeScript/JavaScript ecosystem wi
 - **Performance**: Optimize for speed and minimal bundle size
 - **Universal**: Support both Node.js and browser environments
 - **Modern**: Use latest TypeScript features and async patterns
+
+---
+
+## NFLVerse TypeScript Ecosystem Architecture
+
+### Overview
+
+nflreadts is part of a larger vision to bring the entire nflverse ecosystem to TypeScript. The architecture is designed for:
+
+- **Package Independence**: Each package works standalone
+- **Shared Foundation**: Common types and utilities across all packages
+- **Optimal Tree-Shaking**: Users only bundle what they use
+- **Umbrella Package**: `@nflverse/complete` for convenience
+
+### Planned Package Structure
+
+```
+@nflverse/types         ← Foundation (types + constants only)
+├── Season, Week, Team, SeasonType types
+├── NFL_TEAMS, MIN_SEASON constants
+└── Zero runtime dependencies (TypeScript only)
+
+@nflverse/nflreadts     ← Data Loading (this package)
+├── loadRosters, loadPlayers, loadSchedules
+├── CSV/Parquet parsing
+└── Depends on: @nflverse/types
+
+@nflverse/nflfastr      ← Play-by-Play Analysis (future)
+├── EPA calculations, win probability
+├── Play-by-play processing
+└── Depends on: @nflverse/types
+
+@nflverse/nflseedr      ← Playoff Simulations (future)
+├── Seeding calculations
+├── Monte Carlo simulations
+└── Depends on: @nflverse/types
+
+@nflverse/nfl4th        ← 4th Down Decisions (future)
+├── Go-for-it models
+├── Decision analytics
+└── Depends on: @nflverse/types
+
+@nflverse/complete      ← Umbrella Package (future)
+├── Re-exports all packages
+├── Convenience imports
+└── Optimized for tree-shaking
+```
+
+### Why @nflverse/types?
+
+**Decision: Create separate types package FIRST, before other packages**
+
+**Rationale:**
+
+1. **Single Source of Truth** - All packages reference the same `Season` type
+2. **No Circular Dependencies** - Types sit at bottom of dependency tree
+3. **Zero Bundle Cost** - Pure TypeScript types (0 bytes in JavaScript)
+4. **Version Stability** - Type changes = coordinated updates across ecosystem
+5. **Package Independence** - nfl4th doesn't need to depend on nflreadts just for types
+
+**Example Impact:**
+
+```typescript
+// nflfastr only needs types, not data loading
+import type { Season, PlayByPlayRecord } from '@nflverse/types';
+// Bundle: ~0KB from @nflverse/types
+
+// vs. if types were in nflreadts
+import type { Season } from '@nflverse/nflreadts/types';
+// Bundle: Still pulls in some nflreadts infrastructure
+```
+
+### Package Boundaries
+
+**@nflverse/types** (1-2KB, types only):
+
+- Core domain types: `Season`, `Week`, `Team`, `SeasonType`
+- Constants: `MIN_SEASON`, `NFL_TEAMS`, `HISTORICAL_TEAMS`
+- NO validation logic, NO data structures, NO implementations
+
+**@nflverse/nflreadts** (60-70KB):
+
+- Data loading functions
+- Validation functions (isValidSeason, isValidTeam, etc.)
+- CSV/Parquet parsing
+- HTTP client, caching, rate limiting
+- Record types (RosterRecord, PlayerRecord, etc.)
+
+**Future packages**: Build on `@nflverse/types`, add specialized functionality
+
+### Bundle Size Targets
+
+| Package             | Minified Size     | Use Case                       |
+| ------------------- | ----------------- | ------------------------------ |
+| @nflverse/types     | ~0KB (types only) | Type imports                   |
+| @nflverse/nflreadts | ~20KB             | Data loading                   |
+| @nflverse/nflfastr  | ~15KB             | Analytics                      |
+| @nflverse/complete  | ~50-70KB          | Everything (with tree-shaking) |
 
 ---
 
@@ -205,44 +303,52 @@ Reference: `nflreadr::load_depth_charts()`
 
 ---
 
-## Phase 4: Schedule and Game Data
+## Phase 4: Schedule and Game Data ✅ COMPLETE (Partial)
 
 **Goal**: Implement schedule and game-related functionality
 
-### 4.1 Schedules
+### 4.1 Schedules ✅
 
 Reference: `nflreadr::load_schedules()`
 
-- [ ] Implement `loadSchedules()` function
-- [ ] Support filtering by season/week/team
-- [ ] Add game status information
-- [ ] Write tests
-- [ ] Document API
+- [x] Implement `loadSchedules()` function
+- [x] Support filtering by season/week/team (via returned data)
+- [x] Add game status information (46 fields including scores, betting lines, weather)
+- [x] Write tests (15+ comprehensive test cases)
+- [x] Document API (JSDoc with examples)
 
-### 4.2 Team Descriptions
+### 4.2 Team Descriptions ✅
 
 Reference: `nflreadr::load_teams()`
 
-- [ ] Implement `loadTeams()` function
-- [ ] Add comprehensive team metadata
-- [ ] Support historical team data
-- [ ] Write tests
-- [ ] Document API
+- [x] Implement `loadTeams()` function
+- [x] Add comprehensive team metadata (16 fields with colors, logos, IDs)
+- [x] Support historical team data (`current` option for filtering)
+- [x] Write tests (12+ comprehensive test cases)
+- [x] Document API (JSDoc with examples)
 
-### 4.3 Standings
+### 4.3 Standings ⏸️ DEFERRED
 
-- [ ] Implement `loadStandings()` function
+**Note**: `nflreadr` does not have a `load_standings()` function. Standings are calculated
+using `nflseedR::nfl_standings()` from schedule data. This will be implemented as a utility
+function in a future phase.
+
+- [ ] Implement `calculateStandings()` utility function
 - [ ] Add division/conference filtering
 - [ ] Calculate playoff implications
 - [ ] Write tests
 - [ ] Document API
 
-### Deliverables
+### Phase 4 Deliverables ✅
 
-- Schedule loading
-- Team information
-- Standings data
-- Tests and documentation
+- ✅ Schedule loading functionality (`loadSchedules()`)
+- ✅ ScheduleRecord type with 46 fields (game info, scores, betting lines, weather, IDs)
+- ✅ Team information loading (`loadTeams()`)
+- ✅ TeamRecord type with 16 fields (metadata, colors, logos)
+- ✅ CSV and Parquet format support for both functions
+- ✅ Comprehensive tests with >80% coverage
+- ✅ Complete API documentation with examples
+- ⏸️ Standings data (deferred to utility function)
 
 ---
 
@@ -346,12 +452,33 @@ Reference: `nflreadr::load_draft_picks()`
 
 ---
 
-## Phase 8: Optimization and Polish
+## Phase 8: Optimization and Polish 🔄 IN PROGRESS
 
-**Goal**: Optimize performance and developer experience
+**Goal**: Optimize performance, developer experience, and prepare for ecosystem
 
-### 8.1 Performance
+### 8.0 Types Package Extraction 🔄 IN PROGRESS
 
+**Goal**: Extract shared types to @nflverse/types package
+
+- [x] Document ecosystem architecture in ROADMAP
+- [ ] Create @nflverse/types package repository
+- [ ] Extract core types from nflreadts
+  - [ ] Season, Week, Team, SeasonType
+  - [ ] Constants: MIN_SEASON, NFL_TEAMS, HISTORICAL_TEAMS
+  - [ ] Team abbreviations and mappings
+- [ ] Publish @nflverse/types@0.1.0
+- [ ] Update nflreadts to depend on @nflverse/types
+- [ ] Verify zero runtime bundle cost for type imports
+- [ ] Document type-only import patterns
+
+**Why now**: Establishing the foundation before building nflfastr ensures clean architecture from the start.
+
+### 8.1 Performance ✅ PARTIALLY COMPLETE
+
+- [x] Remove module-level side effects (lazy logger initialization)
+- [x] Add `sideEffects: false` to package.json
+- [x] Enable code splitting in build config
+- [x] Reduce bundle size (22.7KB → 20.1KB minified, ~12% reduction)
 - [ ] Profile and optimize hot paths
 - [ ] Advanced data loading optimizations
   - [ ] Streaming parsers for large files (GB+ datasets)
@@ -361,9 +488,9 @@ Reference: `nflreadr::load_draft_picks()`
   - [ ] Compression support (gzip transfer encoding)
   - [ ] Request batching and connection pooling enhancements
   - [ ] Memory-efficient parsing for large multi-season loads
-- [ ] Optimize bundle size
-  - [ ] Tree-shaking optimization
-  - [ ] Code splitting for data loading functions
+- [ ] Further optimize bundle size
+  - [x] Tree-shaking optimization (lazy loggers)
+  - [ ] Subpath exports for fine-grained imports
   - [ ] Optional dependencies for Parquet support
 - [ ] Add lazy loading where appropriate
 - [ ] Benchmark against nflreadpy/nflreadr
@@ -468,25 +595,27 @@ Reference: `nflreadr::load_draft_picks()`
 
 ---
 
-## Questions & Decisions
-
-Track major architectural decisions here:
-
-1. **Data Format**: CSV vs Parquet vs JSON?
-   - Decision: TBD - research nflverse current formats
-
-2. **Caching Strategy**: Memory only vs persistent?
-   - Decision: TBD - start with memory, add persistent optionally
-
-3. **Module System**: ESM only vs ESM + CJS?
-   - Decision: TBD - likely dual package for maximum compatibility
-
-4. **Browser Support**: Which browsers to support?
-   - Decision: TBD - likely modern browsers with native fetch
-
----
-
 ## Recent Updates
+
+### November 13 2025 - v0.3.x - Ecosystem Architecture & Performance
+
+- 📐 **NFLVerse TypeScript Ecosystem Architecture Defined**
+  - Documented vision for @nflverse/types, @nflverse/nflfast-ts, @nflverse/nflseed-ts, @nflverse/nfl4th-ts
+  - Decided to create @nflverse/types as foundation package (types + constants only)
+  - Established package boundaries and dependency structure
+  - Defined bundle size targets for ecosystem
+
+- ⚡ **Performance & Tree-Shaking Improvements**
+  - Removed module-level side effects (lazy logger initialization)
+  - Added `sideEffects: false` to package.json for better tree-shaking
+  - Enabled code splitting in tsup configuration
+  - Reduced minified bundle size: 22.7KB → 20.1KB (~12% reduction)
+  - Fixed all data loader files: rosters, schedules, teams, players, depth-charts, pbp, participation, player-stats
+
+- 🎯 **Next Steps**
+  - Create @nflverse/types package
+  - Extract core types and constants
+  - Update nflreadts to depend on @nflverse/types
 
 ### October 28 2025 - v0.3.0
 

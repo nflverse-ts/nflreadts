@@ -8,14 +8,18 @@ import type { LoadRostersOptions, RosterRecord } from '../types/roster.js';
 
 import { HttpClient } from '../client/client.js';
 import { getConfig } from '../config/manager.js';
-import { ErrorCode, ValidationError } from '../types/error.js';
+import { Err, NetworkError, Ok, type Result } from '../types/error.js';
 import { getCurrentSeason } from '../utils/datetime.js';
-import { createLogger } from '../utils/logger.js';
+import { createLogger, type Logger } from '../utils/logger.js';
 import { parseCsv, parseParquet } from '../utils/parse.js';
 import { normalizeSeasons } from '../utils/seasons.js';
 import { buildRosterUrl } from '../utils/url.js';
+import { assertValidFormat } from '../utils/validation.js';
+import { validateSeasons } from '../validation/index.js';
 
-const logger = createLogger('rosters');
+// Lazy logger initialization to avoid module-level side effects
+let logger: Logger | undefined;
+const getLogger = () => logger ?? (logger = createLogger('rosters'));
 
 /**
  * Load season-level NFL roster data
@@ -32,24 +36,36 @@ const logger = createLogger('rosters');
  *   - `true` to load ALL available seasons (1920-present) - use with caution!
  *   - Omit to load current season (or previous season if before March)
  * @param options - Load options including format and caching
- * @returns Promise resolving to array of roster records
+ * @returns Result containing array of roster records or an error
  *
  * @example
  * ```typescript
  * // Load current season roster
- * const rosters = await loadRosters();
+ * const result = await loadRosters();
+ * if (result.ok) {
+ *   console.log(`Loaded ${result.value.length} roster entries`);
+ * } else {
+ *   console.error('Error loading rosters:', result.error);
+ * }
  *
- * // Load specific season
- * const rosters2023 = await loadRosters(2023);
+ * // Load specific season with error handling
+ * const result2023 = await loadRosters(2023);
+ * if (result2023.ok) {
+ *   const rosters = result2023.value;
+ *   // Process rosters...
+ * }
  *
  * // Load multiple seasons
- * const rosters = await loadRosters([2022, 2023]);
+ * const multiResult = await loadRosters([2022, 2023]);
+ * if (multiResult.ok) {
+ *   console.log(`Loaded ${multiResult.value.length} total roster entries`);
+ * }
  *
  * // Load all seasons (careful - this is a LOT of data!)
- * const allRosters = await loadRosters(true);
+ * const allResult = await loadRosters(true);
  *
  * // Use Parquet format for better performance
- * const rosters = await loadRosters(2023, { format: 'parquet' });
+ * const parquetResult = await loadRosters(2023, { format: 'parquet' });
  * ```
  *
  * @see https://nflreadr.nflverse.com/reference/load_rosters.html
@@ -57,94 +73,105 @@ const logger = createLogger('rosters');
 export async function loadRosters(
   seasons?: Season | Season[] | true,
   options: LoadRostersOptions = {}
-): Promise<RosterRecord[]> {
+): Promise<Result<RosterRecord[], Error>> {
   const { format = 'csv', ...loadOptions } = options;
 
-  // Determine which seasons to load
-  const currentSeason = getCurrentSeason();
-  const minSeason = 1920;
+  try {
+    // Validate format parameter
+    assertValidFormat(format);
 
-  // Normalize seasons input
-  const seasonsToLoad = normalizeSeasons(seasons, {
-    minSeason,
-    maxSeason: currentSeason,
-    defaultSeason: currentSeason,
-  });
+    // Determine which seasons to load
+    const currentSeason = getCurrentSeason();
+    const minSeason = 1920;
 
-  logger.info(`Loading rosters for seasons: ${seasonsToLoad.join(', ')}`);
+    // Normalize seasons input
+    const seasonsToLoad = normalizeSeasons(seasons, {
+      minSeason,
+      maxSeason: currentSeason,
+      defaultSeason: currentSeason,
+    });
 
-  // Validate seasons
-  for (const season of seasonsToLoad) {
-    if (season < minSeason) {
-      throw new ValidationError(
-        `Season ${season} is before the minimum season (${minSeason})`,
-        ErrorCode.INVALID_SEASON,
-        {
-          season,
-          minSeason,
-        }
-      );
+    getLogger().info(`Loading rosters for seasons: ${seasonsToLoad.join(', ')}`);
+
+    // Validate all seasons using centralized validation
+    const validationResult = validateSeasons(seasonsToLoad, {
+      minSeason,
+      maxSeason: currentSeason,
+      allowFuture: false,
+      coerce: false,
+    });
+
+    if (!validationResult.valid) {
+      return Err(validationResult.error!);
     }
-    if (season > currentSeason) {
-      throw new ValidationError(`Season ${season} is in the future`, ErrorCode.INVALID_SEASON, {
-        season,
-        currentSeason,
-      });
+
+    // Build URLs for all seasons
+    const urls = seasonsToLoad.map((season) => buildRosterUrl(season, format));
+
+    // Fetch all seasons in parallel
+    const config = getConfig();
+    const client = new HttpClient({
+      timeout: config.http.timeout,
+      retry: config.http.retries,
+      cache: config.cache.enabled,
+      cacheTtl: config.cache.ttl,
+      debug: config.logging.debug,
+    });
+    const datasets: RosterRecord[][] = [];
+
+    const fetchPromises = urls.map(async (url) => {
+      getLogger().debug(`Fetching roster data from: ${url}`);
+
+      const response = await client.get(url, loadOptions);
+
+      // Parse based on format
+      if (format === 'parquet') {
+        const buffer = response.data as ArrayBuffer;
+        return parseParquet<RosterRecord>(buffer);
+      } else {
+        const csvString =
+          typeof response.data === 'string'
+            ? response.data
+            : new TextDecoder().decode(response.data as ArrayBuffer);
+        const parseResult = parseCsv<RosterRecord>(csvString);
+        return parseResult.data;
+      }
+    });
+
+    const results = await Promise.all(fetchPromises);
+    datasets.push(...results);
+
+    getLogger().debug(`Received ${datasets.length} datasets`);
+
+    // Pre-allocate result array for better performance
+    const totalRows = datasets.reduce((sum, data) => sum + data.length, 0);
+    const result: RosterRecord[] = new Array<RosterRecord>(totalRows);
+
+    // Concatenate all datasets efficiently
+    let offset = 0;
+    for (const data of datasets) {
+      for (let i = 0; i < data.length; i++) {
+        result[offset + i] = data[i]!;
+      }
+      offset += data.length;
     }
+
+    getLogger().info(`Loaded ${result.length} roster records`);
+
+    return Ok(result);
+  } catch (error) {
+    getLogger().error('Failed to load rosters', error);
+    if (error instanceof Error) {
+      // Convert to appropriate error type
+      if (error.message.includes('fetch') || error.message.includes('network')) {
+        return Err(
+          new NetworkError('Network error loading roster data', {
+            originalError: error.message,
+          })
+        );
+      }
+      return Err(error);
+    }
+    return Err(new Error(String(error)));
   }
-
-  // Build URLs for all seasons
-  const urls = seasonsToLoad.map((season) => buildRosterUrl(season, format));
-
-  // Fetch all seasons in parallel
-  const config = getConfig();
-  const client = new HttpClient({
-    timeout: config.http.timeout,
-    retry: config.http.retries,
-    cache: config.cache.enabled,
-    cacheTtl: config.cache.ttl,
-    debug: config.logging.debug,
-  });
-  const datasets: RosterRecord[][] = [];
-
-  const fetchPromises = urls.map(async (url) => {
-    logger.debug(`Fetching roster data from: ${url}`);
-
-    const response = await client.get(url, loadOptions);
-
-    // Parse based on format
-    if (format === 'parquet') {
-      const buffer = response.data as ArrayBuffer;
-      return parseParquet<RosterRecord>(buffer);
-    } else {
-      const csvString =
-        typeof response.data === 'string'
-          ? response.data
-          : new TextDecoder().decode(response.data as ArrayBuffer);
-      const parseResult = parseCsv<RosterRecord>(csvString);
-      return parseResult.data;
-    }
-  });
-
-  const results = await Promise.all(fetchPromises);
-  datasets.push(...results);
-
-  logger.debug(`Received ${datasets.length} datasets`);
-
-  // Pre-allocate result array for better performance
-  const totalRows = datasets.reduce((sum, data) => sum + data.length, 0);
-  const result: RosterRecord[] = new Array<RosterRecord>(totalRows);
-
-  // Concatenate all datasets efficiently
-  let offset = 0;
-  for (const data of datasets) {
-    for (let i = 0; i < data.length; i++) {
-      result[offset + i] = data[i]!;
-    }
-    offset += data.length;
-  }
-
-  logger.info(`Loaded ${result.length} roster records`);
-
-  return result;
 }

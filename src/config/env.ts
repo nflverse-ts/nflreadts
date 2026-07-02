@@ -38,11 +38,20 @@ function parseNumber(value: string | undefined): number | undefined {
 /**
  * Load configuration from environment variables
  * Environment variable format: NFLREADTS_<SECTION>_<KEY>
+ * Only works in Node.js environments
  *
- * Examples:
+ * @returns Partial configuration object loaded from environment variables
+ *
+ * @example
+ * Environment variables:
  * - NFLREADTS_HTTP_TIMEOUT=60000
  * - NFLREADTS_CACHE_ENABLED=true
  * - NFLREADTS_LOGGING_DEBUG=true
+ *
+ * ```typescript
+ * const envConfig = loadConfigFromEnv();
+ * // Returns: { http: { timeout: 60000 }, cache: { enabled: true }, ... }
+ * ```
  */
 export function loadConfigFromEnv(): PartialNflReadConfig {
   const config: PartialNflReadConfig = {};

@@ -24,6 +24,7 @@
   "license": "MIT",
   "author": "Riel St. Amand <riel.stamand@gmail.com>",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -58,6 +59,8 @@
     "validate": "npm run typecheck && npm run lint && npm run format:check && npm run test"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.0",
     "@types/node": "^20.0.0",
     "@types/papaparse": "^5.3.16",
     "@typescript-eslint/eslint-plugin": "^7.0.0",

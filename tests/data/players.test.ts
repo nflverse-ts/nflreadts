@@ -35,9 +35,11 @@ describe('loadPlayers', () => {
 
       const result = await loadPlayers();
 
-      expect(result).toHaveLength(1);
-      expect(result[0].display_name).toBe('Patrick Mahomes');
-      expect(result[0].gsis_id).toBe('00-0033873');
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0].display_name).toBe('Patrick Mahomes');
+      expect(result.value[0].gsis_id).toBe('00-0033873');
       expect(mockGet).toHaveBeenCalledTimes(1);
     });
 
@@ -54,7 +56,9 @@ describe('loadPlayers', () => {
 
       const result = await loadPlayers();
 
-      expect(result).toHaveLength(0);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(0);
     });
   });
 
@@ -114,9 +118,11 @@ describe('loadPlayers', () => {
 
       const result = await loadPlayers();
 
-      expect(result).toHaveLength(1);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
 
-      const player = result[0];
+      const player = result.value[0];
       expect(player.gsis_id).toBe('00-0033873');
       expect(player.display_name).toBe('Patrick Mahomes');
       expect(player.position).toBe('QB');
@@ -144,10 +150,12 @@ describe('loadPlayers', () => {
 
       const result = await loadPlayers();
 
-      expect(result).toHaveLength(3);
-      expect(result[0].display_name).toBe('Patrick Mahomes');
-      expect(result[1].display_name).toBe('Josh Allen');
-      expect(result[2].display_name).toBe('Lamar Jackson');
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(3);
+      expect(result.value[0].display_name).toBe('Patrick Mahomes');
+      expect(result.value[1].display_name).toBe('Josh Allen');
+      expect(result.value[2].display_name).toBe('Lamar Jackson');
     });
 
     it('should handle null values correctly', async () => {
@@ -166,8 +174,10 @@ describe('loadPlayers', () => {
 
       const result = await loadPlayers();
 
-      expect(result).toHaveLength(1);
-      const player = result[0];
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.value).toHaveLength(1);
+      const player = result.value[0];
       expect(player.college).toBeNull();
       expect(player.draft_year).toBeNull();
     });

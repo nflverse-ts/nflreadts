@@ -1,20 +1,22 @@
 name: Publish to npm
 
+# Changesets flow: pushes to main with pending changesets open/refresh a
+# "Version Packages" PR; merging that PR publishes to npm via OIDC trusted
+# publishing (configured on npmjs.com for this repo + workflow file).
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (leave empty to use package.json version)'
-        required: false
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
   id-token: write
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,7 +29,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       # Trusted publishing (OIDC) requires npm >= 11.5.1; no NPM_TOKEN needed.
-      # Configure the trusted publisher for this repo/workflow on npmjs.com first.
       - name: Update npm
         run: npm install -g npm@latest
 
@@ -37,8 +38,10 @@ jobs:
       - name: Run validation
         run: npm run validate
 
-      - name: Build
-        run: npm run build
-
-      - name: Publish to npm
-        run: npm publish --access public
+      - name: Create version PR or publish
+        uses: changesets/action@v1
+        with:
+          publish: npx changeset publish
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
